@@ -9,8 +9,8 @@ public class VdfMonthlyReportResponse {
     private Integer year;
     private Integer month;
     private String monthName;
+    private BigDecimal totalContributions;
+    private BigDecimal totalExpenses;
     private Integer familiesPaid;
     private Integer familiesPending;
-    private BigDecimal totalCollected;
-    private BigDecimal totalExpenses;
 }

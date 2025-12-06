@@ -26,17 +26,21 @@ public class VdfDeposit {
     @Column(name = "deposit_date", nullable = false)
     private LocalDate depositDate;
 
-    @Column(name = "amount", nullable = false, precision = 10, scale = 2)
+    @Column(name = "amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
     @Column(name = "source_type", nullable = false, length = 50)
-    private String sourceType; // VILLAGER, DONATION, GRANT, OTHER
+    private String sourceType; // VILLAGER, DONATION, OTHER
 
     @Column(name = "source_name", length = 200)
-    private String sourceName;
+    private String sourceName; // Name of villager/donor
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private Member member; // Optional: link to member if villager
+
+    @Column(name = "year")
+    private Integer year;
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
@@ -44,11 +48,20 @@ public class VdfDeposit {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "created_by", length = 100)
-    private String createdBy;
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (year == null) {
+            year = depositDate.getYear();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

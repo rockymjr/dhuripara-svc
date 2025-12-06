@@ -7,15 +7,18 @@ import java.util.UUID;
 
 @Data
 public class VdfFamilyMonthlySummaryResponse {
-    private UUID familyId;
-    private UUID memberId;
-    private String memberName;
-    private String phone;
-    private String monthYear;
-    private BigDecimal requiredAmount;
-    private Boolean isExempted;
-    private BigDecimal paidAmount;
-    private BigDecimal dueAmount;
+    private UUID familyConfigId;
+    private String familyHeadName;
+    private String memberPhone;
+    private BigDecimal monthlyAmount;
+
+    // Month-wise payment status (1-12)
+    private Boolean[] paidMonths = new Boolean[12]; // Jan to Dec
+
+    private Integer totalPaidMonths;
+    private Integer totalPendingMonths;
+    private BigDecimal totalPaid;
+    private BigDecimal totalDue;
 }
 
 

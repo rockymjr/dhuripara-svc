@@ -13,19 +13,16 @@ import java.util.UUID;
 @Repository
 public interface VdfExpenseRepository extends JpaRepository<VdfExpense, UUID> {
 
-    List<VdfExpense> findAllByOrderByExpenseDateDesc();
+    List<VdfExpense> findByYearOrderByExpenseDateDesc(Integer year);
 
-    @Query("SELECT e FROM VdfExpense e WHERE YEAR(e.expenseDate) = :year ORDER BY e.expenseDate DESC")
-    List<VdfExpense> findByYear(@Param("year") Integer year);
+    List<VdfExpense> findByYearAndMonthOrderByExpenseDateDesc(Integer year, Integer month);
 
-    List<VdfExpense> findByCategoryOrderByExpenseDateDesc(String category);
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM VdfExpense e WHERE e.year = :year")
+    BigDecimal getTotalByYear(@Param("year") Integer year);
 
-    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM VdfExpense e")
-    BigDecimal getTotalExpenses();
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM VdfExpense e WHERE e.year = :year AND e.month = :month")
+    BigDecimal getTotalByYearAndMonth(@Param("year") Integer year, @Param("month") Integer month);
 
-    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM VdfExpense e WHERE YEAR(e.expenseDate) = :year")
-    BigDecimal getTotalExpensesByYear(@Param("year") Integer year);
-
-    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM VdfExpense e WHERE e.category = :category")
-    BigDecimal getTotalExpensesByCategory(@Param("category") String category);
+    @Query("SELECT e.category, SUM(e.amount) FROM VdfExpense e WHERE e.year = :year GROUP BY e.category")
+    List<Object[]> getCategoryTotalsByYear(@Param("year") Integer year);
 }

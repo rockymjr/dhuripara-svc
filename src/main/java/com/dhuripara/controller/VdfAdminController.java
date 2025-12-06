@@ -2,7 +2,7 @@ package com.dhuripara.controller;
 
 import com.dhuripara.dto.request.*;
 import com.dhuripara.dto.response.*;
-import com.dhuripara.model.*;
+import com.dhuripara.model.VdfFamilyConfig;
 import com.dhuripara.service.VdfService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,8 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/vdf")
@@ -23,113 +24,100 @@ public class VdfAdminController {
 
     private final VdfService vdfService;
 
-    // ============================================
-    // FAMILY CONFIG ENDPOINTS
-    // ============================================
+    // ==================== DEPOSITS ====================
 
-    @PostMapping("/families")
-    public ResponseEntity<VdfFamilyConfig> registerFamily(@Valid @RequestBody VdfFamilyConfigRequest request) {
-        VdfFamilyConfig family = vdfService.registerFamily(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(family);
+    @PostMapping("/deposits")
+    public ResponseEntity<VdfDepositResponse> createDeposit(@Valid @RequestBody VdfDepositRequest request) {
+        VdfDepositResponse response = vdfService.createDeposit(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PutMapping("/families/{familyId}")
-    public ResponseEntity<VdfFamilyConfig> updateFamily(
-            @PathVariable UUID familyId,
+    @GetMapping("/deposits")
+    public ResponseEntity<List<VdfDepositResponse>> getDeposits(
+            @RequestParam(required = false) Integer year) {
+        if (year == null) {
+            year = java.time.LocalDate.now().getYear();
+        }
+        List<VdfDepositResponse> deposits = vdfService.getDepositsByYear(year);
+        return ResponseEntity.ok(deposits);
+    }
+
+    // ==================== EXPENSES ====================
+
+    @PostMapping("/expenses")
+    public ResponseEntity<VdfExpenseResponse> createExpense(@Valid @RequestBody VdfExpenseRequest request) {
+        VdfExpenseResponse response = vdfService.createExpense(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/expenses")
+    public ResponseEntity<List<VdfExpenseResponse>> getExpenses(
+            @RequestParam(required = false) Integer year) {
+        if (year == null) {
+            year = java.time.LocalDate.now().getYear();
+        }
+        List<VdfExpenseResponse> expenses = vdfService.getExpensesByYear(year);
+        return ResponseEntity.ok(expenses);
+    }
+
+    @GetMapping("/expenses/category-summary")
+    public ResponseEntity<Map<String, BigDecimal>> getCategoryExpenses(
+            @RequestParam(required = false) Integer year) {
+        if (year == null) {
+            year = java.time.LocalDate.now().getYear();
+        }
+        Map<String, BigDecimal> summary = vdfService.getCategoryExpenses(year);
+        return ResponseEntity.ok(summary);
+    }
+
+    // ==================== FAMILY CONFIGURATION ====================
+
+    @PostMapping("/families")
+    public ResponseEntity<VdfFamilyConfig> createOrUpdateFamily(
             @Valid @RequestBody VdfFamilyConfigRequest request) {
-        VdfFamilyConfig family = vdfService.updateFamily(familyId, request);
-        return ResponseEntity.ok(family);
+        VdfFamilyConfig config = vdfService.createOrUpdateFamilyConfig(request);
+        return ResponseEntity.ok(config);
     }
 
     @GetMapping("/families")
-    public ResponseEntity<List<VdfFamilyConfig>> getAllFamilies() {
+    public ResponseEntity<List<VdfFamilyConfig>> getActiveFamilies() {
         List<VdfFamilyConfig> families = vdfService.getAllActiveFamilies();
         return ResponseEntity.ok(families);
     }
 
-    // ============================================
-    // MONTHLY CONFIG ENDPOINTS
-    // ============================================
-
-    @PostMapping("/monthly-config")
-    public ResponseEntity<VdfMonthlyConfig> createOrUpdateMonthlyConfig(
-            @Valid @RequestBody VdfMonthlyConfigRequest request) {
-        VdfMonthlyConfig config = vdfService.createOrUpdateMonthlyConfig(request);
-        return ResponseEntity.ok(config);
-    }
-
-    @GetMapping("/monthly-config")
-    public ResponseEntity<List<VdfMonthlyConfig>> getAllMonthlyConfigs() {
-        List<VdfMonthlyConfig> configs = vdfService.getAllMonthlyConfigs();
-        return ResponseEntity.ok(configs);
-    }
-
-    // ============================================
-    // EXEMPTION ENDPOINTS
-    // ============================================
-
-    @PostMapping("/exemptions")
-    public ResponseEntity<VdfFamilyExemption> addExemption(
-            @Valid @RequestBody VdfExemptionRequest request) {
-        // TODO: Get current admin user ID from security context
-        VdfFamilyExemption exemption = vdfService.addExemption(request, null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(exemption);
-    }
-
-    @DeleteMapping("/exemptions/{exemptionId}")
-    public ResponseEntity<Void> removeExemption(@PathVariable UUID exemptionId) {
-        vdfService.removeExemption(exemptionId);
-        return ResponseEntity.noContent().build();
-    }
-
-    // ============================================
-    // CONTRIBUTION ENDPOINTS
-    // ============================================
+    // ==================== CONTRIBUTIONS ====================
 
     @PostMapping("/contributions")
-    public ResponseEntity<VdfContribution> recordContribution(
-            @Valid @RequestBody VdfContributionRequest request) {
-        VdfContribution contribution = vdfService.recordContribution(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(contribution);
+    public ResponseEntity<Void> recordContribution(@Valid @RequestBody VdfContributionRequest request) {
+        vdfService.recordContribution(request);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @GetMapping("/contributions/family/{familyId}")
-    public ResponseEntity<List<VdfContribution>> getContributionsByFamily(
-            @PathVariable UUID familyId) {
-        List<VdfContribution> contributions = vdfService.getContributionsByFamily(familyId);
-        return ResponseEntity.ok(contributions);
+    @GetMapping("/contributions/monthly-matrix")
+    public ResponseEntity<List<VdfFamilyMonthlySummaryResponse>> getMonthlyMatrix(
+            @RequestParam(required = false) Integer year) {
+        if (year == null) {
+            year = java.time.LocalDate.now().getYear();
+        }
+        List<VdfFamilyMonthlySummaryResponse> matrix = vdfService.getMonthlyContributionMatrix(year);
+        return ResponseEntity.ok(matrix);
     }
 
-    // ============================================
-    // EXPENSE ENDPOINTS
-    // ============================================
+    // ==================== REPORTS ====================
 
-    @PostMapping("/expenses")
-    public ResponseEntity<VdfExpense> recordExpense(@Valid @RequestBody VdfExpenseRequest request) {
-        VdfExpense expense = vdfService.recordExpense(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(expense);
-    }
-
-    @GetMapping("/expenses")
-    public ResponseEntity<List<VdfExpense>> getAllExpenses() {
-        List<VdfExpense> expenses = vdfService.getAllExpenses();
-        return ResponseEntity.ok(expenses);
-    }
-
-    // ============================================
-    // REPORTING ENDPOINTS
-    // ============================================
-
-    @GetMapping("/balance")
-    public ResponseEntity<VdfBalanceSummaryResponse> getBalanceSummary() {
-        VdfBalanceSummaryResponse summary = vdfService.getBalanceSummary();
+    @GetMapping("/summary")
+    public ResponseEntity<VdfSummaryResponse> getSummary() {
+        VdfSummaryResponse summary = vdfService.getSummary();
         return ResponseEntity.ok(summary);
     }
 
-    @GetMapping("/reports/monthly/{monthYear}")
-    public ResponseEntity<List<VdfFamilyMonthlySummaryResponse>> getMonthlyReport(
-            @PathVariable String monthYear) {
-        List<VdfFamilyMonthlySummaryResponse> report = vdfService.getMonthlyReport(monthYear);
+    @GetMapping("/reports/monthly")
+    public ResponseEntity<List<VdfMonthlyReportResponse>> getMonthlyReport(
+            @RequestParam(required = false) Integer year) {
+        if (year == null) {
+            year = java.time.LocalDate.now().getYear();
+        }
+        List<VdfMonthlyReportResponse> report = vdfService.getMonthlyReport(year);
         return ResponseEntity.ok(report);
     }
 }

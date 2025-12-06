@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Data
 public class VdfDepositRequest {
@@ -16,12 +17,14 @@ public class VdfDepositRequest {
     private BigDecimal amount;
 
     @NotBlank(message = "Source type is required")
-    private String sourceType; // VILLAGER, DONATION, GRANT, OTHER
+    @Pattern(regexp = "VILLAGER|DONATION|OTHER", message = "Invalid source type")
+    private String sourceType;
 
+    @NotBlank(message = "Source name is required")
     private String sourceName;
 
-    @NotBlank(message = "Description is required")
-    private String description;
+    private UUID memberId; // Optional: if sourceType is VILLAGER
 
     private String notes;
 }
+

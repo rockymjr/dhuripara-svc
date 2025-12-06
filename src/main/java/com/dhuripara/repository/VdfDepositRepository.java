@@ -14,14 +14,11 @@ import java.util.UUID;
 @Repository
 public interface VdfDepositRepository extends JpaRepository<VdfDeposit, UUID> {
 
-    List<VdfDeposit> findAllByOrderByDepositDateDesc();
+    List<VdfDeposit> findByYearOrderByDepositDateDesc(Integer year);
 
-    @Query("SELECT d FROM VdfDeposit d WHERE YEAR(d.depositDate) = :year ORDER BY d.depositDate DESC")
-    List<VdfDeposit> findByYear(@Param("year") Integer year);
+    @Query("SELECT COALESCE(SUM(d.amount), 0) FROM VdfDeposit d WHERE d.year = :year")
+    BigDecimal getTotalByYear(@Param("year") Integer year);
 
     @Query("SELECT COALESCE(SUM(d.amount), 0) FROM VdfDeposit d")
     BigDecimal getTotalDeposits();
-
-    @Query("SELECT COALESCE(SUM(d.amount), 0) FROM VdfDeposit d WHERE YEAR(d.depositDate) = :year")
-    BigDecimal getTotalDepositsByYear(@Param("year") Integer year);
 }

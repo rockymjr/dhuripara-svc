@@ -1,18 +1,19 @@
 package com.dhuripara.dto.response;
 
 import lombok.Data;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
-public class VdfExpenseResponse {
+public class VdfDepositResponse {
     private UUID id;
-    private LocalDate expenseDate;
+    private LocalDate depositDate;
     private BigDecimal amount;
-    private String category;
-    private String description;
+    private String sourceType;
+    private String sourceName;
+    private String memberName;
     private Integer year;
-    private Integer month;
     private String notes;
 }

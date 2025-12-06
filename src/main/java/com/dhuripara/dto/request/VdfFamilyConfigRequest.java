@@ -15,12 +15,14 @@ public class VdfFamilyConfigRequest {
     @NotBlank(message = "Family head name is required")
     private String familyHeadName;
 
-    private Boolean isContributionEnabled = false;
+    @NotNull(message = "Contribution enabled flag is required")
+    private Boolean isContributionEnabled;
 
     private LocalDate effectiveFrom;
 
-    @DecimalMin(value = "0.01", message = "Monthly amount must be greater than 0")
-    private BigDecimal monthlyAmount = new BigDecimal("20.00");
+    @NotNull(message = "Monthly amount is required")
+    @DecimalMin(value = "0", message = "Monthly amount must be >= 0")
+    private BigDecimal monthlyAmount;
 
     private String notes;
 }

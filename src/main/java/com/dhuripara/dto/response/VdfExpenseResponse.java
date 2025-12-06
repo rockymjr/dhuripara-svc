@@ -18,4 +18,5 @@ public class VdfExpenseResponse {
     private String paymentMethod;
     private String approvedBy;
     private String notes;
+    private String category;
 }

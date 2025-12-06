@@ -237,4 +237,24 @@ public class VdfService {
 
         return report;
     }
+
+    public VdfSummaryResponse getPublicSummary() {
+        log.info("Getting VDF public summary");
+
+        BigDecimal totalContributions = contributionRepository.getTotalContributions();
+        BigDecimal totalExpenses = expenseRepository.getTotalExpenses();
+
+        long totalFamiliesCount = familyConfigRepository.count();
+        long activeFamiliesCount = familyConfigRepository.findByIsActiveTrue().size();
+
+        VdfSummaryResponse response = new VdfSummaryResponse();
+        response.setTotalFamilies((int) totalFamiliesCount);
+        response.setActiveFamilies((int) activeFamiliesCount);
+        response.setTotalCollected(totalContributions);
+        response.setTotalExpenses(totalExpenses);
+        response.setCurrentBalance(totalContributions.subtract(totalExpenses));
+        response.setCurrentYear(String.valueOf(java.time.LocalDate.now().getYear()));
+
+        return response;
+    }
 }

@@ -2,10 +2,12 @@ package com.dhuripara.controller;
 
 import com.dhuripara.dto.request.*;
 import com.dhuripara.dto.response.*;
+import com.dhuripara.model.VdfExpenseCategory;
 import com.dhuripara.model.VdfFamilyConfig;
 import com.dhuripara.service.VdfService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin/vdf")
@@ -73,15 +76,28 @@ public class VdfAdminController {
     // ==================== FAMILY CONFIGURATION ====================
 
     @PostMapping("/families")
-    public ResponseEntity<VdfFamilyConfig> createOrUpdateFamily(
+    public ResponseEntity<VdfFamilyConfigResponse> createFamily(
             @Valid @RequestBody VdfFamilyConfigRequest request) {
         VdfFamilyConfig config = vdfService.createOrUpdateFamilyConfig(request);
-        return ResponseEntity.ok(config);
+        VdfFamilyConfigResponse response = vdfService.getAllFamilies(false).stream()
+            .filter(f -> f.getId().equals(config.getId()))
+            .findFirst()
+            .orElseThrow();
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PutMapping("/families/{id}")
+    public ResponseEntity<VdfFamilyConfigResponse> updateFamily(
+            @PathVariable UUID id,
+            @Valid @RequestBody VdfFamilyConfigRequest request) {
+        VdfFamilyConfigResponse response = vdfService.updateFamilyConfig(id, request);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/families")
-    public ResponseEntity<List<VdfFamilyConfig>> getActiveFamilies() {
-        List<VdfFamilyConfig> families = vdfService.getAllActiveFamilies();
+    public ResponseEntity<List<VdfFamilyConfigResponse>> getAllFamilies(
+            @RequestParam(required = false, defaultValue = "false") Boolean activeOnly) {
+        List<VdfFamilyConfigResponse> families = vdfService.getAllFamilies(activeOnly);
         return ResponseEntity.ok(families);
     }
 
@@ -119,5 +135,40 @@ public class VdfAdminController {
         }
         List<VdfMonthlyReportResponse> report = vdfService.getMonthlyReport(year);
         return ResponseEntity.ok(report);
+    }
+
+    @GetMapping("/families")
+    public ResponseEntity<List<VdfFamilyConfigResponse>> getAllFamilies(
+            @RequestParam(required = false, defaultValue = "false") Boolean activeOnly) {
+        List<VdfFamilyConfigResponse> families = vdfService.getAllFamilies(activeOnly);
+        return ResponseEntity.ok(families);
+    }
+
+    @PutMapping("/families/{id}")
+    public ResponseEntity<VdfFamilyConfigResponse> updateFamily(
+            @PathVariable UUID id,
+            @Valid @RequestBody VdfFamilyConfigRequest request) {
+        VdfFamilyConfigResponse config = vdfService.updateFamilyConfig(id, request);
+        return ResponseEntity.ok(config);
+    }
+
+    @GetMapping("/expense-categories")
+    public ResponseEntity<List<VdfExpenseCategory>> getExpenseCategories() {
+        return ResponseEntity.ok(vdfService.getExpenseCategories());
+    }
+
+    @PutMapping("/expenses/{id}")
+    public ResponseEntity<VdfExpenseResponse> updateExpense(
+            @PathVariable UUID id,
+            @Valid @RequestBody VdfExpenseRequest request) {
+        return ResponseEntity.ok(vdfService.updateExpense(id, request));
+    }
+
+    @GetMapping("/expenses/category/{categoryId}")
+    public ResponseEntity<Page<VdfExpenseResponse>> getExpensesByCategory(
+            @PathVariable UUID categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(vdfService.getExpensesByCategory(categoryId, page, size));
     }
 }

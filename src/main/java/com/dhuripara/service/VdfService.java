@@ -117,6 +117,41 @@ public class VdfService {
         return familyConfigRepository.findByIsContributionEnabledTrue();
     }
 
+    public List<VdfFamilyConfigResponse> getAllFamilies(Boolean activeOnly) {
+        List<VdfFamilyConfig> families;
+        if (Boolean.TRUE.equals(activeOnly)) {
+            families = familyConfigRepository.findByIsContributionEnabledTrue();
+        } else {
+            families = familyConfigRepository.findAll();
+        }
+        
+        int currentYear = LocalDate.now().getYear();
+        return families.stream()
+            .map(family -> convertFamilyToResponse(family, currentYear))
+            .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public VdfFamilyConfigResponse updateFamilyConfig(UUID id, VdfFamilyConfigRequest request) {
+        log.info("Updating family config: {}", id);
+
+        VdfFamilyConfig config = familyConfigRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Family config not found"));
+
+        Member member = memberRepository.findById(request.getMemberId())
+            .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
+
+        config.setMember(member);
+        config.setFamilyHeadName(request.getFamilyHeadName());
+        config.setIsContributionEnabled(request.getIsContributionEnabled());
+        config.setEffectiveFrom(request.getEffectiveFrom());
+        config.setMonthlyAmount(request.getMonthlyAmount());
+        config.setNotes(request.getNotes());
+
+        VdfFamilyConfig updated = familyConfigRepository.save(config);
+        return convertFamilyToResponse(updated, LocalDate.now().getYear());
+    }
+
     // ==================== CONTRIBUTIONS ====================
 
     @Transactional
@@ -290,6 +325,43 @@ public class VdfService {
         response.setYear(expense.getYear());
         response.setMonth(expense.getMonth());
         response.setNotes(expense.getNotes());
+        return response;
+    }
+
+    private VdfFamilyConfigResponse convertFamilyToResponse(VdfFamilyConfig family, Integer year) {
+        VdfFamilyConfigResponse response = new VdfFamilyConfigResponse();
+        response.setId(family.getId());
+        response.setMemberId(family.getMember().getId());
+        response.setMemberName(family.getMember().getFirstName() + " " + family.getMember().getLastName());
+        response.setFamilyHeadName(family.getFamilyHeadName());
+        response.setIsContributionEnabled(family.getIsContributionEnabled());
+        response.setEffectiveFrom(family.getEffectiveFrom());
+        response.setMonthlyAmount(family.getMonthlyAmount());
+        response.setNotes(family.getNotes());
+
+        // Calculate paid and pending months for the year
+        if (Boolean.TRUE.equals(family.getIsContributionEnabled())) {
+            List<VdfContribution> contributions = contributionRepository
+                .findByFamilyConfigIdAndYear(family.getId(), year);
+            
+            response.setTotalPaidMonths(contributions.size());
+            response.setTotalPendingMonths(12 - contributions.size());
+            
+            BigDecimal totalPaid = contributions.stream()
+                .map(VdfContribution::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            response.setTotalAmountPaid(totalPaid);
+            
+            BigDecimal totalDue = family.getMonthlyAmount()
+                .multiply(new BigDecimal(12 - contributions.size()));
+            response.setTotalAmountDue(totalDue);
+        } else {
+            response.setTotalPaidMonths(0);
+            response.setTotalPendingMonths(0);
+            response.setTotalAmountPaid(BigDecimal.ZERO);
+            response.setTotalAmountDue(BigDecimal.ZERO);
+        }
+
         return response;
     }
 }

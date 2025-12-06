@@ -1,9 +1,9 @@
 package com.dhuripara.dto.request;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -12,10 +12,15 @@ public class VdfFamilyConfigRequest {
     @NotNull(message = "Member ID is required")
     private UUID memberId;
 
-    @NotNull(message = "Family size is required")
-    @Min(value = 1, message = "Family size must be at least 1")
-    private Integer familySize;
+    @NotBlank(message = "Family head name is required")
+    private String familyHeadName;
 
-    private LocalDate joinedDate;
+    private Boolean isContributionEnabled = false;
+
+    private LocalDate effectiveFrom;
+
+    @DecimalMin(value = "0.01", message = "Monthly amount must be greater than 0")
+    private BigDecimal monthlyAmount = new BigDecimal("20.00");
+
     private String notes;
 }

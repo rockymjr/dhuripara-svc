@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -23,17 +24,20 @@ public class VdfFamilyConfig {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id", nullable = false, unique = true)
     private Member member;
 
-    @Column(name = "family_size", nullable = false)
-    private Integer familySize = 1;
+    @Column(name = "family_head_name", nullable = false, length = 200)
+    private String familyHeadName;
 
-    @Column(name = "is_active")
-    private Boolean isActive = true;
+    @Column(name = "is_contribution_enabled")
+    private Boolean isContributionEnabled = false;
 
-    @Column(name = "joined_date", nullable = false)
-    private LocalDate joinedDate;
+    @Column(name = "effective_from")
+    private LocalDate effectiveFrom;
+
+    @Column(name = "monthly_amount", precision = 10, scale = 2)
+    private BigDecimal monthlyAmount = new BigDecimal("20.00");
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
@@ -48,9 +52,6 @@ public class VdfFamilyConfig {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (joinedDate == null) {
-            joinedDate = LocalDate.now();
-        }
     }
 
     @PreUpdate

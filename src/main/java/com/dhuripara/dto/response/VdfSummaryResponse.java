@@ -7,7 +7,8 @@ import java.math.BigDecimal;
 public class VdfSummaryResponse {
     private Integer totalFamilies;
     private Integer activeFamilies;
-    private BigDecimal totalCollected;
+    private BigDecimal totalContributions;
+    private BigDecimal totalDeposits;
     private BigDecimal totalExpenses;
     private BigDecimal currentBalance;
     private String currentYear;

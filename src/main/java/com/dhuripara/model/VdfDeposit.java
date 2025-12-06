@@ -12,32 +12,31 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "vdf_contributions")
+@Table(name = "vdf_deposits")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class VdfContribution {
+public class VdfDeposit {
 
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "family_config_id", nullable = false)
-    private VdfFamilyConfig familyConfig;
-
-    @Column(name = "month", nullable = false)
-    private Integer month; // 1-12
-
-    @Column(name = "year", nullable = false)
-    private Integer year;
+    @Column(name = "deposit_date", nullable = false)
+    private LocalDate depositDate;
 
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "payment_date", nullable = false)
-    private LocalDate paymentDate;
+    @Column(name = "source_type", nullable = false, length = 50)
+    private String sourceType; // VILLAGER, DONATION, GRANT, OTHER
+
+    @Column(name = "source_name", length = 200)
+    private String sourceName;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;

@@ -10,7 +10,8 @@ import java.util.UUID;
 
 @Repository
 public interface VdfFamilyConfigRepository extends JpaRepository<VdfFamilyConfig, UUID> {
-    List<VdfFamilyConfig> findByIsActiveTrue();
+    List<VdfFamilyConfig> findAllByOrderByFamilyHeadNameAsc();
     Optional<VdfFamilyConfig> findByMemberId(UUID memberId);
     boolean existsByMemberId(UUID memberId);
+    List<VdfFamilyConfig> findByIsContributionEnabledTrue();
 }

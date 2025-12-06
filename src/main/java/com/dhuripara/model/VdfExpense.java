@@ -30,7 +30,7 @@ public class VdfExpense {
     private BigDecimal amount;
 
     @Column(name = "category", nullable = false, length = 100)
-    private String category;
+    private String category; // STREET_LIGHT, FESTIVAL, ROAD_REPAIR, etc.
 
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
@@ -40,6 +40,9 @@ public class VdfExpense {
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "created_by", length = 100)
+    private String createdBy;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

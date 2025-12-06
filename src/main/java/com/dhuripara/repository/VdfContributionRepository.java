@@ -12,16 +12,19 @@ import java.util.UUID;
 
 @Repository
 public interface VdfContributionRepository extends JpaRepository<VdfContribution, UUID> {
-    List<VdfContribution> findByFamilyIdOrderByPaymentDateDesc(UUID familyId);
+
+    List<VdfContribution> findByFamilyConfigIdOrderByYearDescMonthDesc(UUID familyConfigId);
+
+    List<VdfContribution> findByYearOrderByMonthAsc(Integer year);
+
+    Optional<VdfContribution> findByFamilyConfigIdAndMonthAndYear(UUID familyConfigId, Integer month, Integer year);
+
+    @Query("SELECT COALESCE(SUM(c.amount), 0) FROM VdfContribution c WHERE c.year = :year")
+    BigDecimal getTotalContributionsByYear(@Param("year") Integer year);
+
+    @Query("SELECT COALESCE(SUM(c.amount), 0) FROM VdfContribution c WHERE c.year = :year AND c.month = :month")
+    BigDecimal getTotalContributionsByYearAndMonth(@Param("year") Integer year, @Param("month") Integer month);
 
     @Query("SELECT COALESCE(SUM(c.amount), 0) FROM VdfContribution c")
     BigDecimal getTotalContributions();
-
-    // Get paid amount for a specific family and month
-    @Query(value = "SELECT COALESCE(SUM((alloc->>'amount')::decimal), 0) " +
-            "FROM vdf_contributions c, jsonb_array_elements(c.month_allocations) as alloc " +
-            "WHERE c.family_id = :familyId AND alloc->>'month' = :monthYear",
-            nativeQuery = true)
-    BigDecimal getPaidAmountForFamilyMonth(@Param("familyId") UUID familyId,
-                                           @Param("monthYear") String monthYear);
 }

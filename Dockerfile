@@ -1,5 +1,5 @@
 # Stage 1: build
-FROM eclipse-temurin:17-jdk AS builder
+FROM eclipse-temurin:21-jdk AS builder
 WORKDIR /app
 
 # copy maven wrapper & pom first for layer caching
@@ -14,7 +14,7 @@ COPY src ./src
 RUN ./mvnw -B -DskipTests package
 
 # Stage 2: runtime
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
 # create non-root user

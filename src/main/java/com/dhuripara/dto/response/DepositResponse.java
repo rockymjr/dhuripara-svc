@@ -1,0 +1,29 @@
+package com.dhuripara.dto.response;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.UUID;
+
+@Data
+public class DepositResponse {
+    private UUID id;
+    private UUID memberId;
+    private String memberName;
+    private BigDecimal amount;
+    private LocalDate depositDate;
+    private String status;
+    private LocalDate returnDate;
+    private BigDecimal interestEarned;
+    private BigDecimal totalAmount;
+
+    // For active deposits - current interest till today
+    private BigDecimal currentInterest;
+    private BigDecimal currentTotal;
+
+    private BigDecimal interestRate;
+    private Integer durationDays;
+    private Integer durationMonths;
+    private String notes;
+}

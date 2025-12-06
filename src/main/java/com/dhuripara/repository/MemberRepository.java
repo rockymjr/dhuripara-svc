@@ -1,0 +1,31 @@
+package com.dhuripara.repository;
+
+
+import com.dhuripara.model.Member;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+
+@Repository
+public interface MemberRepository extends JpaRepository<Member, UUID> {
+
+    List<Member> findByIsActiveTrue();
+
+    @Query("SELECT m FROM Member m WHERE " +
+            "LOWER(m.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(m.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "m.phone LIKE CONCAT('%', :search, '%')")
+    List<Member> searchMembers(@Param("search") String search);
+
+    boolean existsByPhone(String phone);
+
+    Optional<Member> findByPhoneAndIsActiveTrue(String phone);
+
+    List<Member> findByIsOperatorTrueAndIsActiveTrue();
+}

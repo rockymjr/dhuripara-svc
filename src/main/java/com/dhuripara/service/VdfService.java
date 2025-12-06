@@ -27,6 +27,7 @@ public class VdfService {
     private final VdfFamilyConfigRepository familyConfigRepository;
     private final VdfContributionRepository contributionRepository;
     private final MemberRepository memberRepository;
+    private final VdfExpenseCategoryRepository expenseCategoryRepository;
 
     // ==================== DEPOSITS ====================
 
@@ -63,12 +64,17 @@ public class VdfService {
     public VdfExpenseResponse createExpense(VdfExpenseRequest request) {
         log.info("Creating VDF expense: {}", request.getDescription());
 
+        VdfExpenseCategory category = expenseCategoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+
         VdfExpense expense = new VdfExpense();
         expense.setExpenseDate(request.getExpenseDate());
         expense.setAmount(request.getAmount());
-        expense.setCategory(request.getCategory());
+        expense.setCategory(category);
         expense.setDescription(request.getDescription());
         expense.setNotes(request.getNotes());
+        expense.setYear(request.getExpenseDate().getYear());
+        expense.setMonth(request.getExpenseDate().getMonth().getValue());
 
         VdfExpense saved = expenseRepository.save(expense);
         return convertExpenseToResponse(saved);
@@ -320,10 +326,11 @@ public class VdfService {
         response.setId(expense.getId());
         response.setExpenseDate(expense.getExpenseDate());
         response.setAmount(expense.getAmount());
-        response.setCategory(expense.getCategory());
+        if (expense.getCategory() != null) {
+            response.setCategoryId(expense.getCategory().getId());
+            response.setCategoryName(expense.getCategory().getCategoryName());
+        }
         response.setDescription(expense.getDescription());
-        response.setYear(expense.getYear());
-        response.setMonth(expense.getMonth());
         response.setNotes(expense.getNotes());
         return response;
     }
@@ -363,5 +370,9 @@ public class VdfService {
         }
 
         return response;
+    }
+
+    public List<VdfExpenseCategory> getExpenseCategories() {
+        return expenseCategoryRepository.findAll();
     }
 }

@@ -15,8 +15,6 @@ public interface VdfExpenseRepository extends JpaRepository<VdfExpense, UUID> {
 
     List<VdfExpense> findByYearOrderByExpenseDateDesc(Integer year);
 
-    List<VdfExpense> findByYearAndMonthOrderByExpenseDateDesc(Integer year, Integer month);
-
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM VdfExpense e WHERE e.year = :year")
     BigDecimal getTotalByYear(@Param("year") Integer year);
 

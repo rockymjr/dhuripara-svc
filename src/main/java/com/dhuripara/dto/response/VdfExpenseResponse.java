@@ -10,9 +10,8 @@ public class VdfExpenseResponse {
     private UUID id;
     private LocalDate expenseDate;
     private BigDecimal amount;
-    private String category;
+    private UUID categoryId;
+    private String categoryName;
     private String description;
-    private Integer year;
-    private Integer month;
     private String notes;
 }

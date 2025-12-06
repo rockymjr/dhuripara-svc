@@ -29,17 +29,12 @@ public class VdfExpense {
     @Column(name = "amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "category", nullable = false, length = 100)
-    private String category; // STREET_LIGHT, FESTIVAL, MAINTENANCE, OTHER
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private VdfExpenseCategory category;
 
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
-
-    @Column(name = "year")
-    private Integer year;
-
-    @Column(name = "month")
-    private Integer month;
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
@@ -50,20 +45,22 @@ public class VdfExpense {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "year", nullable = false)
+    private Integer year;
+
+    @Column(name = "month", nullable = false)
+    private Integer month;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (year == null) {
-            year = expenseDate.getYear();
-        }
-        if (month == null) {
-            month = expenseDate.getMonthValue();
-        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    
 }

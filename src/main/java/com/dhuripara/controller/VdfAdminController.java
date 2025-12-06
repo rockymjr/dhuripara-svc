@@ -1,13 +1,15 @@
 package com.dhuripara.controller;
 
-import com.dhuripara.dto.request.*;
+import com.dhuripara.dto.request.VdfContributionRequest;
+import com.dhuripara.dto.request.VdfDepositRequest;
+import com.dhuripara.dto.request.VdfExpenseRequest;
+import com.dhuripara.dto.request.VdfFamilyConfigRequest;
 import com.dhuripara.dto.response.*;
 import com.dhuripara.model.VdfExpenseCategory;
 import com.dhuripara.model.VdfFamilyConfig;
 import com.dhuripara.service.VdfService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -139,10 +141,10 @@ public class VdfAdminController {
 
     //TODO fix following methods in vdfService class
 
-//    @GetMapping("/expense-categories")
-//    public ResponseEntity<List<VdfExpenseCategory>> getExpenseCategories() {
-//        return ResponseEntity.ok(vdfService.getExpenseCategories());
-//    }
+    @GetMapping("/expense-categories")
+    public ResponseEntity<List<VdfExpenseCategory>> getExpenseCategories() {
+        return ResponseEntity.ok(vdfService.getExpenseCategories());
+    }
 
 //    @PutMapping("/expenses/{id}")
 //    public ResponseEntity<VdfExpenseResponse> updateExpense(

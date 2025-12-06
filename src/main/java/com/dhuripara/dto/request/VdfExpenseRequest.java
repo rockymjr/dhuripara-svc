@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Data
 public class VdfExpenseRequest {
@@ -15,8 +16,8 @@ public class VdfExpenseRequest {
     @DecimalMin(value = "0.01", message = "Amount must be greater than 0")
     private BigDecimal amount;
 
-    @NotBlank(message = "Category is required")
-    private String category;
+    @NotNull(message = "Category ID is required")
+    private UUID categoryId;
 
     @NotBlank(message = "Description is required")
     private String description;

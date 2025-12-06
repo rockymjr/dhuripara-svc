@@ -137,38 +137,25 @@ public class VdfAdminController {
         return ResponseEntity.ok(report);
     }
 
-    @GetMapping("/families")
-    public ResponseEntity<List<VdfFamilyConfigResponse>> getAllFamilies(
-            @RequestParam(required = false, defaultValue = "false") Boolean activeOnly) {
-        List<VdfFamilyConfigResponse> families = vdfService.getAllFamilies(activeOnly);
-        return ResponseEntity.ok(families);
-    }
+    //TODO fix following methods in vdfService class
 
-    @PutMapping("/families/{id}")
-    public ResponseEntity<VdfFamilyConfigResponse> updateFamily(
-            @PathVariable UUID id,
-            @Valid @RequestBody VdfFamilyConfigRequest request) {
-        VdfFamilyConfigResponse config = vdfService.updateFamilyConfig(id, request);
-        return ResponseEntity.ok(config);
-    }
+//    @GetMapping("/expense-categories")
+//    public ResponseEntity<List<VdfExpenseCategory>> getExpenseCategories() {
+//        return ResponseEntity.ok(vdfService.getExpenseCategories());
+//    }
 
-    @GetMapping("/expense-categories")
-    public ResponseEntity<List<VdfExpenseCategory>> getExpenseCategories() {
-        return ResponseEntity.ok(vdfService.getExpenseCategories());
-    }
+//    @PutMapping("/expenses/{id}")
+//    public ResponseEntity<VdfExpenseResponse> updateExpense(
+//            @PathVariable UUID id,
+//            @Valid @RequestBody VdfExpenseRequest request) {
+//        return ResponseEntity.ok(vdfService.updateExpense(id, request));
+//    }
 
-    @PutMapping("/expenses/{id}")
-    public ResponseEntity<VdfExpenseResponse> updateExpense(
-            @PathVariable UUID id,
-            @Valid @RequestBody VdfExpenseRequest request) {
-        return ResponseEntity.ok(vdfService.updateExpense(id, request));
-    }
-
-    @GetMapping("/expenses/category/{categoryId}")
-    public ResponseEntity<Page<VdfExpenseResponse>> getExpensesByCategory(
-            @PathVariable UUID categoryId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(vdfService.getExpensesByCategory(categoryId, page, size));
-    }
+//    @GetMapping("/expenses/category/{categoryId}")
+//    public ResponseEntity<Page<VdfExpenseResponse>> getExpensesByCategory(
+//            @PathVariable UUID categoryId,
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "20") int size) {
+//        return ResponseEntity.ok(vdfService.getExpensesByCategory(categoryId, page, size));
+//    }
 }

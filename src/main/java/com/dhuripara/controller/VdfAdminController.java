@@ -156,8 +156,6 @@ public class VdfAdminController {
         return ResponseEntity.ok(report);
     }
 
-    //TODO fix following methods in vdfService class
-
     @GetMapping("/expense-categories")
     public ResponseEntity<List<VdfExpenseCategory>> getExpenseCategories() {
         return ResponseEntity.ok(vdfService.getExpenseCategories());
@@ -168,12 +166,19 @@ public class VdfAdminController {
         return ResponseEntity.ok(vdfService.getDepositCategories());
     }
 
-//    @PutMapping("/expenses/{id}")
-//    public ResponseEntity<VdfExpenseResponse> updateExpense(
-//            @PathVariable UUID id,
-//            @Valid @RequestBody VdfExpenseRequest request) {
-//        return ResponseEntity.ok(vdfService.updateExpense(id, request));
-//    }
+    @PutMapping("/expenses/{id}")
+    public ResponseEntity<VdfExpenseResponse> updateExpense(
+            @PathVariable UUID id,
+            @Valid @RequestBody VdfExpenseRequest request) {
+        return ResponseEntity.ok(vdfService.updateExpense(id, request));
+    }
+
+    @DeleteMapping("/expenses/{id}")
+    public ResponseEntity<Void> deleteExpense(@PathVariable UUID id) {
+        vdfService.deleteExpense(id);
+        return ResponseEntity.ok().build();
+    }
+
 
 //    @GetMapping("/expenses/category/{categoryId}")
 //    public ResponseEntity<Page<VdfExpenseResponse>> getExpensesByCategory(

@@ -512,4 +512,22 @@ public class VdfService {
                 .isActive(category.getIsActive())
                 .build();
     }
+
+    public VdfExpenseResponse updateExpense(UUID id, VdfExpenseRequest request) {
+        VdfExpense expense = expenseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Expense not found"));
+        expense.setExpenseDate(request.getExpenseDate());
+        expense.setAmount(request.getAmount());
+        expense.setCategory(expenseCategoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found")));
+        expense.setDescription(request.getDescription());
+        expense.setNotes(request.getNotes());
+        expense.setYear(request.getExpenseDate().getYear());
+        expense.setMonth(request.getExpenseDate().getMonth().getValue());
+        return convertExpenseToResponse(expenseRepository.save(expense));
+    }
+
+    public void deleteExpense(UUID id) {
+        expenseRepository.deleteById(id);
+    }
 }

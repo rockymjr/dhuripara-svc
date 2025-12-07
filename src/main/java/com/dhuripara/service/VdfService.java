@@ -28,6 +28,7 @@ public class VdfService {
     private final VdfContributionRepository contributionRepository;
     private final MemberRepository memberRepository;
     private final VdfExpenseCategoryRepository expenseCategoryRepository;
+    private final VdfDepositCategoryRepository depositCategoryRepository;
 
     // ==================== DEPOSITS ====================
 
@@ -35,11 +36,15 @@ public class VdfService {
     public VdfDepositResponse createDeposit(VdfDepositRequest request) {
         log.info("Creating VDF deposit from: {}", request.getSourceName());
 
+        VdfDepositCategory category = depositCategoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Deposit category not found"));
+
         VdfDeposit deposit = new VdfDeposit();
         deposit.setDepositDate(request.getDepositDate());
         deposit.setAmount(request.getAmount());
         deposit.setSourceType(request.getSourceType());
         deposit.setSourceName(request.getSourceName());
+        deposit.setCategory(category);
         deposit.setNotes(request.getNotes());
 
         if (request.getMemberId() != null) {
@@ -189,6 +194,122 @@ public class VdfService {
         contribution.setNotes(request.getNotes());
 
         contributionRepository.save(contribution);
+
+        // Also create a deposit entry for the villager contribution
+        VdfDepositCategory villagerCategory = depositCategoryRepository
+                .findByIsActiveTrueOrderByCategoryNameAsc()
+                .stream()
+                .filter(cat -> cat.getCategoryName().equalsIgnoreCase("Villager Contribution"))
+                .findFirst()
+                .orElse(null);
+
+        if (villagerCategory != null) {
+            VdfDeposit deposit = new VdfDeposit();
+            deposit.setDepositDate(request.getPaymentDate());
+            deposit.setAmount(request.getAmount());
+            deposit.setSourceType("VILLAGER");
+            deposit.setSourceName(familyConfig.getMember().getFirstName() + " " + familyConfig.getMember().getLastName() + " - Month " + request.getMonth());
+            deposit.setMember(familyConfig.getMember());
+            deposit.setCategory(villagerCategory);
+            deposit.setYear(request.getYear());
+            deposit.setNotes(request.getNotes());
+            
+            depositRepository.save(deposit);
+            log.info("Created corresponding deposit for contribution: {}", deposit.getId());
+        }
+    }
+
+    public List<VdfContributionResponse> getFamilyContributions(UUID familyConfigId, Integer year) {
+        log.info("Getting contributions for family config: {} year {}", familyConfigId, year);
+        
+        List<VdfContribution> contributions = contributionRepository.findByFamilyConfigIdAndYear(familyConfigId, year);
+        return contributions.stream()
+                .map(this::mapToContributionResponse)
+                .toList();
+    }
+
+    private VdfContributionResponse mapToContributionResponse(VdfContribution contribution) {
+        VdfContributionResponse response = new VdfContributionResponse();
+        response.setId(contribution.getId());
+        response.setFamilyId(contribution.getFamilyConfig().getId());
+        response.setMemberName(contribution.getFamilyConfig().getMember().getFirstName() + " " + 
+                               contribution.getFamilyConfig().getMember().getLastName());
+        response.setMonth(contribution.getMonth());
+        response.setYear(contribution.getYear());
+        response.setAmount(contribution.getAmount());
+        response.setPaymentDate(contribution.getPaymentDate());
+        response.setNotes(contribution.getNotes());
+        return response;
+    }
+
+    public void recordBulkContributions(com.dhuripara.dto.request.VdfBulkContributionRequest request) {
+        log.info("Recording bulk contributions for family config: {} year {}", request.getFamilyConfigId(), request.getYear());
+
+        VdfFamilyConfig familyConfig = familyConfigRepository.findById(request.getFamilyConfigId())
+                .orElseThrow(() -> new ResourceNotFoundException("Family config not found"));
+
+        if (!familyConfig.getIsContributionEnabled()) {
+            throw new BusinessException("Contributions are not enabled for this family");
+        }
+
+        // process each month
+        java.math.BigDecimal total = java.math.BigDecimal.ZERO;
+        StringBuilder monthsList = new StringBuilder();
+        
+        for (com.dhuripara.dto.request.VdfBulkContributionRequest.MonthlyContributionInput contrib : request.getContributions()) {
+            Integer month = contrib.getMonth();
+            java.math.BigDecimal amount = contrib.getAmount() == null ? java.math.BigDecimal.ZERO : contrib.getAmount();
+
+            if (amount.compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                continue; // skip zero amounts
+            }
+
+            total = total.add(amount);
+            if (monthsList.length() > 0) monthsList.append(", ");
+            monthsList.append(month);
+
+            Optional<VdfContribution> existing = contributionRepository
+                    .findByFamilyConfigIdAndYearAndMonth(request.getFamilyConfigId(), request.getYear(), month);
+
+            if (existing.isPresent()) {
+                VdfContribution c = existing.get();
+                c.setAmount(amount);
+                c.setPaymentDate(request.getPaymentDate());
+                c.setNotes(request.getNotes());
+                contributionRepository.save(c);
+            } else {
+                VdfContribution c = new VdfContribution();
+                c.setFamilyConfig(familyConfig);
+                c.setYear(request.getYear());
+                c.setMonth(month);
+                c.setAmount(amount);
+                c.setPaymentDate(request.getPaymentDate());
+                c.setNotes(request.getNotes());
+                contributionRepository.save(c);
+            }
+        }
+
+        if (total.compareTo(java.math.BigDecimal.ZERO) > 0) {
+            // create single deposit for the total amount
+            VdfDepositCategory villagerCategory = depositCategoryRepository
+                    .findByIsActiveTrueOrderByCategoryNameAsc()
+                    .stream()
+                    .filter(cat -> cat.getCategoryName().equalsIgnoreCase("Villager Contribution") || cat.getCategoryName().equalsIgnoreCase("Monthly Contribution"))
+                    .findFirst()
+                    .orElse(null);
+
+            VdfDeposit deposit = new VdfDeposit();
+            deposit.setDepositDate(request.getPaymentDate());
+            deposit.setAmount(total);
+            deposit.setSourceType("VILLAGER");
+            deposit.setSourceName(familyConfig.getMember().getFirstName() + " " + familyConfig.getMember().getLastName() + " - Bulk " + request.getYear());
+            deposit.setMember(familyConfig.getMember());
+            deposit.setCategory(villagerCategory);
+            deposit.setYear(request.getYear());
+            deposit.setNotes("Bulk contribution months: " + monthsList.toString() + (request.getNotes() != null ? (" - " + request.getNotes()) : ""));
+            depositRepository.save(deposit);
+            log.info("Created bulk deposit for contributions: {}", deposit.getId());
+        }
     }
 
     public List<VdfFamilyMonthlySummaryResponse> getMonthlyContributionMatrix(Integer year) {
@@ -374,5 +495,21 @@ public class VdfService {
 
     public List<VdfExpenseCategory> getExpenseCategories() {
         return expenseCategoryRepository.findAll();
+    }
+
+    public List<VdfDepositCategoryResponse> getDepositCategories() {
+        return depositCategoryRepository.findByIsActiveTrueOrderByCategoryNameAsc()
+                .stream()
+                .map(this::convertCategoryToResponse)
+                .collect(Collectors.toList());
+    }
+
+    private VdfDepositCategoryResponse convertCategoryToResponse(VdfDepositCategory category) {
+        return VdfDepositCategoryResponse.builder()
+                .id(category.getId())
+                .categoryName(category.getCategoryName())
+                .description(category.getDescription())
+                .isActive(category.getIsActive())
+                .build();
     }
 }

@@ -11,6 +11,8 @@ public class VdfContributionResponse {
     private UUID id;
     private UUID familyId;
     private String memberName;
+    private Integer month;  // 1-12
+    private Integer year;
     private BigDecimal amount;
     private LocalDate paymentDate;
     private List<MonthAllocationResponse> monthAllocations;

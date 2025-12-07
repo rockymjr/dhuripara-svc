@@ -110,6 +110,23 @@ public class VdfAdminController {
         vdfService.recordContribution(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+    
+        @PostMapping("/contributions/bulk")
+    public ResponseEntity<Void> recordBulkContributions(@Valid @RequestBody com.dhuripara.dto.request.VdfBulkContributionRequest request) {
+        vdfService.recordBulkContributions(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/contributions/family/{familyConfigId}")
+    public ResponseEntity<List<VdfContributionResponse>> getFamilyContributions(
+            @PathVariable UUID familyConfigId,
+            @RequestParam(required = false) Integer year) {
+        if (year == null) {
+            year = java.time.LocalDate.now().getYear();
+        }
+        List<VdfContributionResponse> contributions = vdfService.getFamilyContributions(familyConfigId, year);
+        return ResponseEntity.ok(contributions);
+    }
 
     @GetMapping("/contributions/monthly-matrix")
     public ResponseEntity<List<VdfFamilyMonthlySummaryResponse>> getMonthlyMatrix(
@@ -144,6 +161,11 @@ public class VdfAdminController {
     @GetMapping("/expense-categories")
     public ResponseEntity<List<VdfExpenseCategory>> getExpenseCategories() {
         return ResponseEntity.ok(vdfService.getExpenseCategories());
+    }
+
+    @GetMapping("/deposit-categories")
+    public ResponseEntity<List<VdfDepositCategoryResponse>> getDepositCategories() {
+        return ResponseEntity.ok(vdfService.getDepositCategories());
     }
 
 //    @PutMapping("/expenses/{id}")

@@ -4,6 +4,7 @@ import com.dhuripara.dto.response.VdfDepositResponse;
 import com.dhuripara.dto.response.VdfExpenseResponse;
 import com.dhuripara.dto.response.VdfFamilyMonthlySummaryResponse;
 import com.dhuripara.dto.response.VdfSummaryResponse;
+import com.dhuripara.dto.response.VdfDepositCategoryResponse;
 import com.dhuripara.service.VdfService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -52,5 +53,10 @@ class VdfPublicController {
         }
         List<VdfFamilyMonthlySummaryResponse> matrix = vdfService.getMonthlyContributionMatrix(year);
         return ResponseEntity.ok(matrix);
+    }
+
+    @GetMapping("/deposit-categories")
+    public ResponseEntity<List<VdfDepositCategoryResponse>> getDepositCategories() {
+        return ResponseEntity.ok(vdfService.getDepositCategories());
     }
 }

@@ -23,8 +23,12 @@ public class VdfDepositRequest {
     @NotBlank(message = "Source name is required")
     private String sourceName;
 
+    @NotNull(message = "Deposit category is required")
+    private UUID categoryId; // New field for category
+
     private UUID memberId; // Optional: if sourceType is VILLAGER
 
     private String notes;
 }
+
 

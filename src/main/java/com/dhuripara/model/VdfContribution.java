@@ -24,7 +24,7 @@ public class VdfContribution {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "family_config_id", nullable = false)
+    @JoinColumn(name = "family_id", nullable = false)
     private VdfFamilyConfig familyConfig;
 
     @Column(name = "month", nullable = false)

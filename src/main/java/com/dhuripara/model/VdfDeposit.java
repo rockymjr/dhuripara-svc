@@ -39,6 +39,10 @@ public class VdfDeposit {
     @JoinColumn(name = "member_id")
     private Member member; // Optional: link to member if villager
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deposit_category_id")
+    private VdfDepositCategory category; // Category of deposit
+
     @Column(name = "year")
     private Integer year;
 

@@ -16,4 +16,6 @@ public class VdfDepositResponse {
     private String memberName;
     private Integer year;
     private String notes;
+    private UUID categoryId; // New field
+    private String categoryName; // New field
 }

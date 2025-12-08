@@ -3,8 +3,10 @@ package com.dhuripara.controller;
 import com.dhuripara.dto.response.VdfDepositResponse;
 import com.dhuripara.dto.response.VdfExpenseResponse;
 import com.dhuripara.dto.response.VdfFamilyMonthlySummaryResponse;
+import com.dhuripara.dto.response.VdfFamilyConfigResponse;
 import com.dhuripara.dto.response.VdfSummaryResponse;
 import com.dhuripara.dto.response.VdfDepositCategoryResponse;
+import com.dhuripara.model.VdfExpenseCategory;
 import com.dhuripara.service.VdfService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -58,5 +60,17 @@ class VdfPublicController {
     @GetMapping("/deposit-categories")
     public ResponseEntity<List<VdfDepositCategoryResponse>> getDepositCategories() {
         return ResponseEntity.ok(vdfService.getDepositCategories());
+    }
+
+    @GetMapping("/expense-categories")
+    public ResponseEntity<List<VdfExpenseCategory>> getExpenseCategories() {
+        return ResponseEntity.ok(vdfService.getExpenseCategories());
+    }
+
+    @GetMapping("/families")
+    public ResponseEntity<List<com.dhuripara.dto.response.VdfFamilyConfigResponse>> getFamilies(
+            @RequestParam(required = false, defaultValue = "false") Boolean activeOnly) {
+        List<com.dhuripara.dto.response.VdfFamilyConfigResponse> families = vdfService.getAllFamilies(activeOnly);
+        return ResponseEntity.ok(families);
     }
 }

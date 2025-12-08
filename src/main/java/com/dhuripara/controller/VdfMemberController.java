@@ -28,4 +28,12 @@ public class VdfMemberController {
         // For now, returning empty list - implement based on your logic
         return ResponseEntity.ok(List.of());
     }
+
+    @GetMapping("/account")
+    public ResponseEntity<com.dhuripara.dto.response.MemberVdfAccountResponse> getMyVdfAccount(Authentication authentication) {
+        String username = authentication.getName();
+        UUID memberId = UUID.fromString(username.replace("MEMBER_", ""));
+        com.dhuripara.dto.response.MemberVdfAccountResponse resp = vdfService.getMemberVdfAccount(memberId);
+        return ResponseEntity.ok(resp);
+    }
 }

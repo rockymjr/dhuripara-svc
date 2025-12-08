@@ -47,6 +47,12 @@ public class VdfAdminController {
         return ResponseEntity.ok(deposits);
     }
 
+    @DeleteMapping("/deposits/{id}")
+    public ResponseEntity<Void> deleteDeposit(@PathVariable UUID id) {
+        vdfService.deleteDeposit(id);
+        return ResponseEntity.ok().build();
+    }
+
     // ==================== EXPENSES ====================
 
     @PostMapping("/expenses")
@@ -101,6 +107,18 @@ public class VdfAdminController {
             @RequestParam(required = false, defaultValue = "false") Boolean activeOnly) {
         List<VdfFamilyConfigResponse> families = vdfService.getAllFamilies(activeOnly);
         return ResponseEntity.ok(families);
+    }
+
+    @PostMapping("/family-exemptions")
+    public ResponseEntity<Void> createFamilyExemption(@Valid @RequestBody com.dhuripara.dto.request.VdfExemptionRequest request) {
+        vdfService.createExemption(request);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @DeleteMapping("/family-exemptions")
+    public ResponseEntity<Void> deleteFamilyExemption(@RequestParam java.util.UUID familyId, @RequestParam String monthYear) {
+        vdfService.deleteExemption(familyId, monthYear);
+        return ResponseEntity.ok().build();
     }
 
     // ==================== CONTRIBUTIONS ====================

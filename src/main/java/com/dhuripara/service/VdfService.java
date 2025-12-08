@@ -29,6 +29,8 @@ public class VdfService {
     private final MemberRepository memberRepository;
     private final VdfExpenseCategoryRepository expenseCategoryRepository;
     private final VdfDepositCategoryRepository depositCategoryRepository;
+    private final VdfFamilyExemptionRepository vdfFamilyExemptionRepository;
+    private final VdfMonthlyConfigRepository vdfMonthlyConfigRepository;
 
     // ==================== DEPOSITS ====================
 
@@ -61,6 +63,14 @@ public class VdfService {
         return depositRepository.findByYearOrderByDepositDateDesc(year).stream()
                 .map(this::convertDepositToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteDeposit(UUID id) {
+        VdfDeposit deposit = depositRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Deposit not found"));
+        depositRepository.deleteById(id);
+        log.info("VDF deposit deleted: {}", id);
     }
 
     // ==================== EXPENSES ====================
@@ -161,6 +171,34 @@ public class VdfService {
 
         VdfFamilyConfig updated = familyConfigRepository.save(config);
         return convertFamilyToResponse(updated, LocalDate.now().getYear());
+    }
+
+    @Transactional
+    public void createExemption(com.dhuripara.dto.request.VdfExemptionRequest request) {
+        log.info("Creating exemption for family: {} month: {}", request.getFamilyId(), request.getMonthYear());
+
+        VdfFamilyConfig family = familyConfigRepository.findById(request.getFamilyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Family config not found"));
+
+        if (vdfFamilyExemptionRepository.existsByFamilyIdAndMonthYear(request.getFamilyId(), request.getMonthYear())) {
+            throw new BusinessException("Exemption already exists for this family and month");
+        }
+
+        VdfFamilyExemption ex = new VdfFamilyExemption();
+        ex.setFamily(family);
+        ex.setMonthYear(request.getMonthYear());
+        ex.setReason(request.getReason());
+        // exemptedBy left null (could be set to current admin if available)
+
+        vdfFamilyExemptionRepository.save(ex);
+    }
+
+    @Transactional
+    public void deleteExemption(UUID familyId, String monthYear) {
+        log.info("Deleting exemption for family: {} month: {}", familyId, monthYear);
+        VdfFamilyExemption ex = vdfFamilyExemptionRepository.findByFamilyIdAndMonthYear(familyId, monthYear)
+                .orElseThrow(() -> new ResourceNotFoundException("Exemption not found"));
+        vdfFamilyExemptionRepository.delete(ex);
     }
 
     // ==================== CONTRIBUTIONS ====================
@@ -315,6 +353,7 @@ public class VdfService {
     public List<VdfFamilyMonthlySummaryResponse> getMonthlyContributionMatrix(Integer year) {
         List<VdfFamilyConfig> activeFamilies = familyConfigRepository.findByIsContributionEnabledTrue();
         List<VdfFamilyMonthlySummaryResponse> summaries = new ArrayList<>();
+        LocalDate today = LocalDate.now();
 
         for (VdfFamilyConfig family : activeFamilies) {
             VdfFamilyMonthlySummaryResponse summary = new VdfFamilyMonthlySummaryResponse();
@@ -340,11 +379,72 @@ public class VdfService {
                 totalPaid = totalPaid.add(contribution.getAmount());
             }
 
+            // Fetch exemptions for this family for the year
+            Boolean[] exemptedMonths = new Boolean[12];
+            Arrays.fill(exemptedMonths, false);
+            Map<String, Boolean> exemptionsMap = new HashMap<>();
+            List<VdfFamilyExemption> exemptions = vdfFamilyExemptionRepository.findByFamilyId(family.getId());
+            for (VdfFamilyExemption ex : exemptions) {
+                String my = ex.getMonthYear();
+                if (my != null && my.startsWith(String.valueOf(year))) {
+                    try {
+                        int month = Integer.parseInt(my.substring(5,7));
+                        if (month >=1 && month <=12) {
+                            exemptedMonths[month-1] = true;
+                        }
+                    } catch (Exception ignored) {}
+                    exemptionsMap.put(my, true);
+                }
+            }
+
+            // Calculate applicable months from effectiveFrom to current month
+            int applicableMonths = calculateApplicableMonths(family.getEffectiveFrom(), year, today);
+
             summary.setPaidMonths(paidMonths);
+            summary.setExemptedMonths(exemptedMonths);
+            summary.setExemptionsMap(exemptionsMap);
             summary.setTotalPaidMonths(paidCount);
-            summary.setTotalPendingMonths(12 - paidCount);
+
+            int exemptCount = 0;
+            for (boolean e : exemptedMonths) if (e) exemptCount++;
+
+            int effectivePending = applicableMonths - paidCount - exemptCount;
+            if (effectivePending < 0) effectivePending = 0;
+
+            summary.setTotalPendingMonths(effectivePending);
             summary.setTotalPaid(totalPaid);
-            summary.setTotalDue(family.getMonthlyAmount().multiply(new BigDecimal(12 - paidCount)));
+            summary.setTotalDue(family.getMonthlyAmount().multiply(new BigDecimal(effectivePending)));
+
+            // All-time totals (since effectiveFrom to today)
+            java.math.BigDecimal paidAll = contributionRepository.getTotalByFamily(family.getId());
+            summary.setTotalPaidAllTime(paidAll);
+
+            // compute all-time due by iterating months from effectiveFrom to today
+            java.time.LocalDate start = family.getEffectiveFrom();
+            if (start == null) {
+                if (family.getCreatedAt() != null) start = family.getCreatedAt().toLocalDate();
+                else start = LocalDate.of(2023, 6, 1);
+            }
+            java.math.BigDecimal requiredSum = java.math.BigDecimal.ZERO;
+            java.time.LocalDate iter = java.time.LocalDate.of(start.getYear(), start.getMonthValue(), 1);
+            while (!iter.isAfter(today)) {
+                String monText = String.format("%04d-%02d", iter.getYear(), iter.getMonthValue());
+                // skip exempted months
+                if (!vdfFamilyExemptionRepository.existsByFamilyIdAndMonthYear(family.getId(), monText)) {
+                    java.math.BigDecimal req = vdfMonthlyConfigRepository.findByMonthYear(monText)
+                            .map(VdfMonthlyConfig -> VdfMonthlyConfig.getRequiredAmount())
+                            .orElse(family.getMonthlyAmount());
+                    requiredSum = requiredSum.add(req == null ? java.math.BigDecimal.ZERO : req);
+                }
+                iter = iter.plusMonths(1);
+            }
+
+            java.math.BigDecimal dueAll = requiredSum.subtract(paidAll == null ? java.math.BigDecimal.ZERO : paidAll);
+            if (dueAll.compareTo(java.math.BigDecimal.ZERO) < 0) dueAll = java.math.BigDecimal.ZERO;
+            summary.setTotalDueAllTime(dueAll);
+            // Populate alias fields for frontend compatibility
+            summary.setTotalAmountPaid(paidAll == null ? java.math.BigDecimal.ZERO : paidAll);
+            summary.setTotalAmountDue(dueAll == null ? java.math.BigDecimal.ZERO : dueAll);
 
             summaries.add(summary);
         }
@@ -359,14 +459,115 @@ public class VdfService {
             return BigDecimal.ZERO;
         }
 
-        int currentYear = LocalDate.now().getYear();
+        LocalDate today = LocalDate.now();
+        int currentYear = today.getYear();
         List<VdfContribution> contributions = contributionRepository
                 .findByFamilyConfigIdAndYear(config.get().getId(), currentYear);
 
         int paidMonths = contributions.size();
-        int pendingMonths = 12 - paidMonths;
+        
+        // Calculate applicable months from effectiveFrom to current month
+        int applicableMonths = calculateApplicableMonths(config.get().getEffectiveFrom(), currentYear, today);
+        int pendingMonths = applicableMonths - paidMonths;
+        if (pendingMonths < 0) pendingMonths = 0;
 
         return config.get().getMonthlyAmount().multiply(new BigDecimal(pendingMonths));
+    }
+
+    public com.dhuripara.dto.response.MemberVdfAccountResponse getMemberVdfAccount(UUID memberId) {
+        com.dhuripara.dto.response.MemberVdfAccountResponse resp = new com.dhuripara.dto.response.MemberVdfAccountResponse();
+
+        // find family config for member
+        java.util.Optional<VdfFamilyConfig> cfgOpt = familyConfigRepository.findByMemberId(memberId);
+        if (cfgOpt.isEmpty()) {
+            resp.setTotalPaidAllTime(java.math.BigDecimal.ZERO);
+            resp.setTotalDueAllTime(java.math.BigDecimal.ZERO);
+            resp.setCurrentYearDue(java.math.BigDecimal.ZERO);
+            resp.setContributions(java.util.List.of());
+            return resp;
+        }
+
+        VdfFamilyConfig family = cfgOpt.get();
+        UUID familyId = family.getId();
+
+        // total paid all time
+        java.math.BigDecimal paidAll = contributionRepository.getTotalByFamily(familyId);
+        if (paidAll == null) paidAll = java.math.BigDecimal.ZERO;
+
+        // compute required sum from effectiveFrom to today, skipping exemptions and using monthly config when present
+        java.time.LocalDate start = family.getEffectiveFrom();
+        if (start == null) {
+            if (family.getCreatedAt() != null) start = family.getCreatedAt().toLocalDate();
+            else start = java.time.LocalDate.of(2023, 6, 1);
+        }
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.math.BigDecimal requiredSum = java.math.BigDecimal.ZERO;
+        java.time.LocalDate iter = java.time.LocalDate.of(start.getYear(), start.getMonthValue(), 1);
+        while (!iter.isAfter(today)) {
+            String monText = String.format("%04d-%02d", iter.getYear(), iter.getMonthValue());
+            if (!vdfFamilyExemptionRepository.existsByFamilyIdAndMonthYear(familyId, monText)) {
+                java.math.BigDecimal req = vdfMonthlyConfigRepository.findByMonthYear(monText)
+                        .map(VdfMonthlyConfig -> VdfMonthlyConfig.getRequiredAmount())
+                        .orElse(family.getMonthlyAmount());
+                requiredSum = requiredSum.add(req == null ? java.math.BigDecimal.ZERO : req);
+            }
+            iter = iter.plusMonths(1);
+        }
+
+        java.math.BigDecimal dueAll = requiredSum.subtract(paidAll == null ? java.math.BigDecimal.ZERO : paidAll);
+        if (dueAll.compareTo(java.math.BigDecimal.ZERO) < 0) dueAll = java.math.BigDecimal.ZERO;
+
+        // current year due (use existing method)
+        java.math.BigDecimal currentDue = calculateMemberVdfDues(memberId);
+
+        // contributions list (all years)
+        java.util.List<VdfContribution> contribs = contributionRepository.findAll().stream()
+                .filter(c -> c.getFamilyConfig() != null && familyId.equals(c.getFamilyConfig().getId()))
+                .sorted((a,b) -> {
+                    int cmp = b.getYear().compareTo(a.getYear());
+                    if (cmp != 0) return cmp;
+                    return b.getMonth().compareTo(a.getMonth());
+                })
+                .toList();
+
+        java.util.List<com.dhuripara.dto.response.VdfContributionResponse> contribResp = contribs.stream()
+                .map(this::mapToContributionResponse)
+                .toList();
+
+        resp.setTotalPaidAllTime(paidAll);
+        resp.setTotalDueAllTime(dueAll);
+        resp.setCurrentYearDue(currentDue);
+        resp.setContributions(contribResp);
+        return resp;
+    }
+
+    private int calculateApplicableMonths(LocalDate effectiveFrom, Integer year, LocalDate today) {
+        if (effectiveFrom == null) {
+            effectiveFrom = LocalDate.of(year, 1, 1);
+        }
+
+        // If effectiveFrom is after today, no applicable months
+        if (effectiveFrom.isAfter(today)) {
+            return 0;
+        }
+
+        // If effectiveFrom year is different from requested year
+        if (effectiveFrom.getYear() != year) {
+            if (effectiveFrom.getYear() > year) {
+                return 0; // Family starts after this year
+            }
+            // effectiveFrom is before the year, include all months up to current month
+            if (today.getYear() == year) {
+                return today.getMonthValue();
+            } else {
+                return 12; // This year is fully in the past
+            }
+        }
+
+        // Both are in same year
+        int startMonth = effectiveFrom.getMonthValue();
+        int endMonth = today.getMonthValue();
+        return endMonth - startMonth + 1;
     }
 
     // ==================== REPORTS & SUMMARY ====================

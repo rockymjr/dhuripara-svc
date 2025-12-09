@@ -73,6 +73,36 @@ public class VdfService {
         log.info("VDF deposit deleted: {}", id);
     }
 
+    @Transactional
+    public VdfDepositResponse updateDeposit(UUID id, VdfDepositRequest request) {
+        log.info("Updating VDF deposit: {}", id);
+
+        VdfDeposit deposit = depositRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Deposit not found"));
+
+        VdfDepositCategory category = depositCategoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Deposit category not found"));
+
+        deposit.setDepositDate(request.getDepositDate());
+        deposit.setAmount(request.getAmount());
+        deposit.setSourceType(request.getSourceType());
+        deposit.setSourceName(request.getSourceName());
+        deposit.setCategory(category);
+        deposit.setNotes(request.getNotes());
+
+        if (request.getMemberId() != null) {
+            Member member = memberRepository.findById(request.getMemberId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
+            deposit.setMember(member);
+        } else {
+            deposit.setMember(null);
+        }
+
+        VdfDeposit updated = depositRepository.save(deposit);
+        log.info("VDF deposit updated: {}", id);
+        return convertDepositToResponse(updated);
+    }
+
     // ==================== EXPENSES ====================
 
     @Transactional
@@ -299,16 +329,21 @@ public class VdfService {
             Integer month = contrib.getMonth();
             java.math.BigDecimal amount = contrib.getAmount() == null ? java.math.BigDecimal.ZERO : contrib.getAmount();
 
+            Optional<VdfContribution> existing = contributionRepository
+                    .findByFamilyConfigIdAndYearAndMonth(request.getFamilyConfigId(), request.getYear(), month);
+
             if (amount.compareTo(java.math.BigDecimal.ZERO) <= 0) {
-                continue; // skip zero amounts
+                // Delete contribution if it exists and amount is zero
+                if (existing.isPresent()) {
+                    log.info("Deleting contribution for family {} month {} year {}", request.getFamilyConfigId(), month, request.getYear());
+                    contributionRepository.delete(existing.get());
+                }
+                continue; // skip further processing for zero amounts
             }
 
             total = total.add(amount);
             if (monthsList.length() > 0) monthsList.append(", ");
             monthsList.append(month);
-
-            Optional<VdfContribution> existing = contributionRepository
-                    .findByFamilyConfigIdAndYearAndMonth(request.getFamilyConfigId(), request.getYear(), month);
 
             if (existing.isPresent()) {
                 VdfContribution c = existing.get();

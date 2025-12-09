@@ -53,6 +53,12 @@ public class VdfAdminController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping("/deposits/{id}")
+    public ResponseEntity<VdfDepositResponse> updateDeposit(@PathVariable UUID id, @Valid @RequestBody VdfDepositRequest request) {
+        VdfDepositResponse response = vdfService.updateDeposit(id, request);
+        return ResponseEntity.ok(response);
+    }
+
     // ==================== EXPENSES ====================
 
     @PostMapping("/expenses")

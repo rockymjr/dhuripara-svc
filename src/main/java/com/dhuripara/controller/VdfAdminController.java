@@ -129,10 +129,14 @@ public class VdfAdminController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
     
-        @PostMapping("/contributions/bulk")
-    public ResponseEntity<Void> recordBulkContributions(@Valid @RequestBody com.dhuripara.dto.request.VdfBulkContributionRequest request) {
-        vdfService.recordBulkContributions(request);
-        return ResponseEntity.ok().build();
+    @PostMapping("/contributions/bulk")
+    public ResponseEntity<?> recordBulkContributions(@Valid @RequestBody com.dhuripara.dto.request.VdfBulkContributionRequest request) {
+        try {
+            vdfService.recordBulkContributions(request);
+            return ResponseEntity.ok(java.util.Map.of("message", "Contributions recorded successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/contributions/family/{familyConfigId}")

@@ -20,4 +20,7 @@ public class VdfFamilyConfigResponse {
     private Integer totalPendingMonths;
     private BigDecimal totalAmountPaid;
     private BigDecimal totalAmountDue;
+    // All-time totals (since effectiveFrom to today)
+    private BigDecimal totalPaidAllTime;
+    private BigDecimal totalDueAllTime;
 }

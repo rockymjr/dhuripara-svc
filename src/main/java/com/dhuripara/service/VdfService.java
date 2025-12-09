@@ -280,6 +280,7 @@ public class VdfService {
         return response;
     }
 
+    @Transactional
     public void recordBulkContributions(com.dhuripara.dto.request.VdfBulkContributionRequest request) {
         log.info("Recording bulk contributions for family config: {} year {}", request.getFamilyConfigId(), request.getYear());
 
@@ -690,6 +691,40 @@ public class VdfService {
             response.setTotalAmountPaid(BigDecimal.ZERO);
             response.setTotalAmountDue(BigDecimal.ZERO);
         }
+
+        // Also compute all-time totals (since effectiveFrom to today)
+        java.math.BigDecimal paidAll = contributionRepository.getTotalByFamily(family.getId());
+        if (paidAll == null) paidAll = java.math.BigDecimal.ZERO;
+
+        // compute all-time required sum from effectiveFrom to today
+        java.time.LocalDate start = family.getEffectiveFrom();
+        java.time.LocalDate today = java.time.LocalDate.now();
+        if (start == null) {
+            if (family.getCreatedAt() != null) start = family.getCreatedAt().toLocalDate();
+            else start = java.time.LocalDate.of(2023, 6, 1);
+        }
+
+        java.math.BigDecimal requiredSum = java.math.BigDecimal.ZERO;
+        java.time.LocalDate iter = java.time.LocalDate.of(start.getYear(), start.getMonthValue(), 1);
+        while (!iter.isAfter(today)) {
+            String monText = String.format("%04d-%02d", iter.getYear(), iter.getMonthValue());
+            if (!vdfFamilyExemptionRepository.existsByFamilyIdAndMonthYear(family.getId(), monText)) {
+                java.math.BigDecimal req = vdfMonthlyConfigRepository.findByMonthYear(monText)
+                        .map(VdfMonthlyConfig -> VdfMonthlyConfig.getRequiredAmount())
+                        .orElse(family.getMonthlyAmount());
+                requiredSum = requiredSum.add(req == null ? java.math.BigDecimal.ZERO : req);
+            }
+            iter = iter.plusMonths(1);
+        }
+
+        java.math.BigDecimal dueAll = requiredSum.subtract(paidAll == null ? java.math.BigDecimal.ZERO : paidAll);
+        if (dueAll.compareTo(java.math.BigDecimal.ZERO) < 0) dueAll = java.math.BigDecimal.ZERO;
+
+        response.setTotalPaidAllTime(paidAll);
+        response.setTotalDueAllTime(dueAll);
+        // alias fields for compatibility
+        response.setTotalAmountPaid(paidAll);
+        response.setTotalAmountDue(dueAll);
 
         return response;
     }

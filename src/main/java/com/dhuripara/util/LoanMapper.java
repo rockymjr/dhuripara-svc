@@ -7,6 +7,7 @@ import com.dhuripara.model.LoanPayment;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import com.dhuripara.util.NameUtil;
 
 public class LoanMapper {
 
@@ -14,7 +15,7 @@ public class LoanMapper {
         LoanResponse response = new LoanResponse();
         response.setId(loan.getId());
         response.setMemberId(loan.getMember().getId());
-        response.setMemberName(loan.getMember().getFirstName() + " " + loan.getMember().getLastName());
+        response.setMemberName(NameUtil.buildMemberName(loan.getMember()));
         response.setLoanAmount(loan.getLoanAmount());
         response.setLoanDate(loan.getLoanDate());
         response.setStatus(loan.getStatus());

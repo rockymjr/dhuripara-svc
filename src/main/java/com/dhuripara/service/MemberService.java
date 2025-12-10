@@ -31,6 +31,8 @@ public class MemberService {
         Member member = new Member();
         member.setFirstName(request.getFirstName());
         member.setLastName(request.getLastName());
+        member.setFirstNameBn(request.getFirstNameBn());
+        member.setLastNameBn(request.getLastNameBn());
         member.setPhone(request.getPhone());
         member.setPin(request.getPin());
         member.setJoiningDate(LocalDate.now());
@@ -69,6 +71,8 @@ public class MemberService {
 
         member.setFirstName(request.getFirstName());
         member.setLastName(request.getLastName());
+        member.setFirstNameBn(request.getFirstNameBn());
+        member.setLastNameBn(request.getLastNameBn());
         member.setPhone(request.getPhone());
         member.setPin(request.getPin());
         member.setIsOperator(request.getIsOperator());
@@ -119,6 +123,8 @@ public class MemberService {
         response.setId(member.getId());
         response.setFirstName(member.getFirstName());
         response.setLastName(member.getLastName());
+        response.setFirstNameBn(member.getFirstNameBn());
+        response.setLastNameBn(member.getLastNameBn());
         response.setPhone(member.getPhone());
         response.setJoiningDate(member.getJoiningDate());
         response.setIsActive(member.getIsActive());

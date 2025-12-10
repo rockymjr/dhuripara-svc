@@ -29,6 +29,12 @@ public class Member {
     @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
 
+    @Column(name = "first_name_bn", length = 100)
+    private String firstNameBn;
+
+    @Column(name = "last_name_bn", length = 100)
+    private String lastNameBn;
+
     @Column(name = "phone", length = 15)
     private String phone;
 

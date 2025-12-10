@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
+import com.dhuripara.util.NameUtil;
 
 import static com.dhuripara.util.BankConstants.ACTIVE;
 
@@ -95,7 +96,7 @@ public class MemberAuthService {
         MemberAuthResponse response = new MemberAuthResponse();
         response.setToken(token);
         response.setMemberId(member.getId());
-        response.setMemberName(member.getFirstName() + " " + member.getLastName());
+        response.setMemberName(NameUtil.buildMemberName(member));
         response.setPhone(member.getPhone());
         response.setExpiresIn(86400L);
         response.setIsOperator(member.getIsOperator());
@@ -112,7 +113,7 @@ public class MemberAuthService {
                 .map(LoanMapper::convertToResponseWithCurrentInterest).toList();
 
         MemberDashboardResponse response = new MemberDashboardResponse();
-        response.setMemberName(member.getFirstName() + " " + member.getLastName());
+        response.setMemberName(NameUtil.buildMemberName(member));
         response.setPhone(member.getPhone());
 
         // Calculate totals

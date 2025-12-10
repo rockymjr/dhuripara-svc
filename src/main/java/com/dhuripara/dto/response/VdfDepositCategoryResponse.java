@@ -9,6 +9,7 @@ import java.util.UUID;
 public class VdfDepositCategoryResponse {
     private UUID id;
     private String categoryName;
+    private String categoryNameBn;
     private String description;
     private Boolean isActive;
 }

@@ -5,6 +5,7 @@ import com.dhuripara.model.Deposit;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import com.dhuripara.util.NameUtil;
 
 public class DepositMapper {
 
@@ -31,7 +32,7 @@ public class DepositMapper {
         DepositResponse response = new DepositResponse();
         response.setId(deposit.getId());
         response.setMemberId(deposit.getMember().getId());
-        response.setMemberName(deposit.getMember().getFirstName() + " " + deposit.getMember().getLastName());
+        response.setMemberName(NameUtil.buildMemberName(deposit.getMember()));
         response.setAmount(deposit.getAmount());
         response.setDepositDate(deposit.getDepositDate());
         response.setStatus(deposit.getStatus());

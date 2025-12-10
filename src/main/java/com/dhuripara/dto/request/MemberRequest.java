@@ -14,6 +14,12 @@ public class MemberRequest {
     @Size(max = 100)
     private String lastName;
 
+    @Size(max = 100)
+    private String firstNameBn;
+
+    @Size(max = 100)
+    private String lastNameBn;
+
     @Pattern(regexp = "^[0-9]{10}$", message = "Phone must be 10 digits",
             groups = ValidationGroups.PhoneValidation.class)
     private String phone;

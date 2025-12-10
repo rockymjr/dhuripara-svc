@@ -31,6 +31,9 @@ public class VdfDeposit {
     @Column(name = "source_name", length = 200)
     private String sourceName; // Name of villager/donor
 
+    @Column(name = "source_name_bn", length = 200)
+    private String sourceNameBn; // Bengali name of villager/donor
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member; // Optional: link to member if villager

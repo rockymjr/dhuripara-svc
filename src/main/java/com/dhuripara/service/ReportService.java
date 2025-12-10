@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import com.dhuripara.util.NameUtil;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +50,7 @@ public class ReportService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         MemberStatementResponse response = new MemberStatementResponse();
-        response.setMemberName(member.getFirstName() + " " + member.getLastName());
+        response.setMemberName(NameUtil.buildMemberName(member));
         response.setPhone(member.getPhone());
         response.setDeposits(deposits);
         response.setLoans(loans);

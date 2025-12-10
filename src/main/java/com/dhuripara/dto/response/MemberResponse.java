@@ -11,6 +11,8 @@ public class MemberResponse {
     private UUID id;
     private String firstName;
     private String lastName;
+    private String firstNameBn;
+    private String lastNameBn;
     private String phone;
     private Boolean isOperator;
     private String pin;

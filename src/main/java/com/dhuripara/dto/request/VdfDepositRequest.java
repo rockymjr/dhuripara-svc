@@ -17,6 +17,7 @@ public class VdfDepositRequest {
     private BigDecimal amount;
 
     private String sourceName;
+    private String sourceNameBn;
 
     @NotNull(message = "Deposit category is required")
     private UUID categoryId; // New field for category

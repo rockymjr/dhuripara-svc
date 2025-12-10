@@ -24,6 +24,9 @@ public class VdfDepositCategory {
     @Column(name = "category_name", nullable = false, length = 100)
     private String categoryName;
 
+    @Column(name = "category_name_bn", length = 100)
+    private String categoryNameBn;
+
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 

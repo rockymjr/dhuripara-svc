@@ -22,5 +22,7 @@ public class VdfExpenseRequest {
     @NotBlank(message = "Description is required")
     private String description;
 
+    private String descriptionBn;
+
     private String notes;
 }

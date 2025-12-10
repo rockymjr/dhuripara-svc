@@ -45,6 +45,7 @@ public class VdfService {
         deposit.setDepositDate(request.getDepositDate());
         deposit.setAmount(request.getAmount());
         deposit.setSourceName(request.getSourceName());
+        deposit.setSourceNameBn(request.getSourceNameBn());
         deposit.setCategory(category);
         deposit.setNotes(request.getNotes());
 
@@ -56,7 +57,7 @@ public class VdfService {
 
         VdfDeposit saved = depositRepository.save(deposit);
         return convertDepositToResponse(saved);
-    }
+        }
 
     public List<VdfDepositResponse> getDepositsByYear(Integer year) {
         return depositRepository.findByYearOrderByDepositDateDesc(year).stream()
@@ -85,6 +86,7 @@ public class VdfService {
         deposit.setDepositDate(request.getDepositDate());
         deposit.setAmount(request.getAmount());
         deposit.setSourceName(request.getSourceName());
+        deposit.setSourceNameBn(request.getSourceNameBn());
         deposit.setCategory(category);
         deposit.setNotes(request.getNotes());
 
@@ -115,6 +117,7 @@ public class VdfService {
         expense.setAmount(request.getAmount());
         expense.setCategory(category);
         expense.setDescription(request.getDescription());
+        expense.setDescriptionBn(request.getDescriptionBn());
         expense.setNotes(request.getNotes());
         expense.setYear(request.getExpenseDate().getYear());
         expense.setMonth(request.getExpenseDate().getMonth().getValue());
@@ -273,7 +276,13 @@ public class VdfService {
             VdfDeposit deposit = new VdfDeposit();
             deposit.setDepositDate(request.getPaymentDate());
             deposit.setAmount(request.getAmount());
-            deposit.setSourceName(familyConfig.getMember().getFirstName() + " " + familyConfig.getMember().getLastName() + " - Month " + request.getMonth());
+                deposit.setSourceName(familyConfig.getMember().getFirstName() + " " + familyConfig.getMember().getLastName() + " - Month " + request.getMonth());
+                // build bn source name from member bn fields if available
+                String bnFirst = familyConfig.getMember().getFirstNameBn();
+                String bnLast = familyConfig.getMember().getLastNameBn();
+                if (bnFirst != null && !bnFirst.isBlank()) {
+                    deposit.setSourceNameBn((bnFirst + " " + (bnLast != null ? bnLast : "")).trim() + " - Month " + request.getMonth());
+                }
             deposit.setMember(familyConfig.getMember());
             deposit.setCategory(villagerCategory);
             deposit.setYear(request.getYear());
@@ -297,8 +306,7 @@ public class VdfService {
         VdfContributionResponse response = new VdfContributionResponse();
         response.setId(contribution.getId());
         response.setFamilyId(contribution.getFamilyConfig().getId());
-        response.setMemberName(contribution.getFamilyConfig().getMember().getFirstName() + " " + 
-                               contribution.getFamilyConfig().getMember().getLastName());
+        response.setMemberName(com.dhuripara.util.NameUtil.buildMemberName(contribution.getFamilyConfig().getMember()));
         response.setMonth(contribution.getMonth());
         response.setYear(contribution.getYear());
         response.setAmount(contribution.getAmount());
@@ -373,6 +381,11 @@ public class VdfService {
             deposit.setDepositDate(request.getPaymentDate());
             deposit.setAmount(total);
             deposit.setSourceName(familyConfig.getMember().getFirstName() + " " + familyConfig.getMember().getLastName() + " - Bulk " + request.getYear());
+            String bnF = familyConfig.getMember().getFirstNameBn();
+            String bnL = familyConfig.getMember().getLastNameBn();
+            if (bnF != null && !bnF.isBlank()) {
+                deposit.setSourceNameBn((bnF + " " + (bnL != null ? bnL : "")).trim() + " - Bulk " + request.getYear());
+            }
             deposit.setMember(familyConfig.getMember());
             deposit.setCategory(villagerCategory);
             deposit.setYear(request.getYear());
@@ -667,14 +680,15 @@ public class VdfService {
 
         if (deposit.getMember() != null) {
             response.setMemberId(deposit.getMember().getId());
-            response.setMemberName(deposit.getMember().getFirstName() + " " +
-                    deposit.getMember().getLastName());
+            response.setMemberName(com.dhuripara.util.NameUtil.buildMemberName(deposit.getMember()));
             
             // Also populate the full member object for frontend filtering
             MemberResponse memberResponse = new MemberResponse();
             memberResponse.setId(deposit.getMember().getId());
             memberResponse.setFirstName(deposit.getMember().getFirstName());
             memberResponse.setLastName(deposit.getMember().getLastName());
+            memberResponse.setFirstNameBn(deposit.getMember().getFirstNameBn());
+            memberResponse.setLastNameBn(deposit.getMember().getLastNameBn());
             memberResponse.setPhone(deposit.getMember().getPhone());
             memberResponse.setIsOperator(deposit.getMember().getIsOperator());
             memberResponse.setIsActive(deposit.getMember().getIsActive());
@@ -684,7 +698,11 @@ public class VdfService {
         if (deposit.getCategory() != null) {
             response.setCategoryId(deposit.getCategory().getId());
             response.setCategoryName(deposit.getCategory().getCategoryName());
+            // include bn category name if present
+            response.setCategoryNameBn(deposit.getCategory().getCategoryNameBn());
         }
+        // include bn source name
+        response.setSourceNameBn(deposit.getSourceNameBn());
 
         return response;
     }
@@ -697,8 +715,10 @@ public class VdfService {
         if (expense.getCategory() != null) {
             response.setCategoryId(expense.getCategory().getId());
             response.setCategoryName(expense.getCategory().getCategoryName());
+            response.setCategoryNameBn(expense.getCategory().getCategoryNameBn());
         }
         response.setDescription(expense.getDescription());
+        response.setDescriptionBn(expense.getDescriptionBn());
         response.setNotes(expense.getNotes());
         return response;
     }
@@ -707,7 +727,7 @@ public class VdfService {
         VdfFamilyConfigResponse response = new VdfFamilyConfigResponse();
         response.setId(family.getId());
         response.setMemberId(family.getMember().getId());
-        response.setMemberName(family.getMember().getFirstName() + " " + family.getMember().getLastName());
+        response.setMemberName(com.dhuripara.util.NameUtil.buildMemberName(family.getMember()));
         response.setFamilyHeadName(family.getFamilyHeadName());
         response.setIsContributionEnabled(family.getIsContributionEnabled());
         response.setEffectiveFrom(family.getEffectiveFrom());
@@ -789,6 +809,7 @@ public class VdfService {
         return VdfDepositCategoryResponse.builder()
                 .id(category.getId())
                 .categoryName(category.getCategoryName())
+                .categoryNameBn(category.getCategoryNameBn())
                 .description(category.getDescription())
                 .isActive(category.getIsActive())
                 .build();
@@ -802,6 +823,7 @@ public class VdfService {
         expense.setCategory(expenseCategoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found")));
         expense.setDescription(request.getDescription());
+        expense.setDescriptionBn(request.getDescriptionBn());
         expense.setNotes(request.getNotes());
         expense.setYear(request.getExpenseDate().getYear());
         expense.setMonth(request.getExpenseDate().getMonth().getValue());

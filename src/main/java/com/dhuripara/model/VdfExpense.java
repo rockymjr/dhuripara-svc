@@ -36,6 +36,9 @@ public class VdfExpense {
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "description_bn", columnDefinition = "TEXT")
+    private String descriptionBn;
+
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 

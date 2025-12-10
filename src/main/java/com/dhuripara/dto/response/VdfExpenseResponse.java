@@ -12,6 +12,8 @@ public class VdfExpenseResponse {
     private BigDecimal amount;
     private UUID categoryId;
     private String categoryName;
+    private String categoryNameBn;
     private String description;
+    private String descriptionBn;
     private String notes;
 }

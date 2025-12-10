@@ -16,17 +16,12 @@ public class VdfDepositRequest {
     @DecimalMin(value = "0.01", message = "Amount must be greater than 0")
     private BigDecimal amount;
 
-    @NotBlank(message = "Source type is required")
-    @Pattern(regexp = "VILLAGER|DONATION|OTHER", message = "Invalid source type")
-    private String sourceType;
-
-    @NotBlank(message = "Source name is required")
     private String sourceName;
 
     @NotNull(message = "Deposit category is required")
     private UUID categoryId; // New field for category
 
-    private UUID memberId; // Optional: if sourceType is VILLAGER
+    private UUID memberId; // Optional: if deposit is linked to a member
 
     private String notes;
 }

@@ -28,10 +28,6 @@ public class VdfDeposit {
 
     @Column(name = "amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
-
-    @Column(name = "source_type", nullable = false, length = 50)
-    private String sourceType; // VILLAGER, DONATION, OTHER
-
     @Column(name = "source_name", length = 200)
     private String sourceName; // Name of villager/donor
 

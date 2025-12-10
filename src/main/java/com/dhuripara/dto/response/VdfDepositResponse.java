@@ -11,11 +11,12 @@ public class VdfDepositResponse {
     private UUID id;
     private LocalDate depositDate;
     private BigDecimal amount;
-    private String sourceType;
     private String sourceName;
     private String memberName;
+    private UUID memberId; // Added: Member ID for filtering
+    private MemberResponse member; // Added: Full member object with firstName, lastName
     private Integer year;
     private String notes;
-    private UUID categoryId; // New field
-    private String categoryName; // New field
+    private UUID categoryId;
+    private String categoryName;
 }

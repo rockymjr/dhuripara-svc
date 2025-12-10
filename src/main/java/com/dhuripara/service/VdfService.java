@@ -44,7 +44,6 @@ public class VdfService {
         VdfDeposit deposit = new VdfDeposit();
         deposit.setDepositDate(request.getDepositDate());
         deposit.setAmount(request.getAmount());
-        deposit.setSourceType(request.getSourceType());
         deposit.setSourceName(request.getSourceName());
         deposit.setCategory(category);
         deposit.setNotes(request.getNotes());
@@ -85,7 +84,6 @@ public class VdfService {
 
         deposit.setDepositDate(request.getDepositDate());
         deposit.setAmount(request.getAmount());
-        deposit.setSourceType(request.getSourceType());
         deposit.setSourceName(request.getSourceName());
         deposit.setCategory(category);
         deposit.setNotes(request.getNotes());
@@ -275,7 +273,6 @@ public class VdfService {
             VdfDeposit deposit = new VdfDeposit();
             deposit.setDepositDate(request.getPaymentDate());
             deposit.setAmount(request.getAmount());
-            deposit.setSourceType("VILLAGER");
             deposit.setSourceName(familyConfig.getMember().getFirstName() + " " + familyConfig.getMember().getLastName() + " - Month " + request.getMonth());
             deposit.setMember(familyConfig.getMember());
             deposit.setCategory(villagerCategory);
@@ -375,7 +372,6 @@ public class VdfService {
             VdfDeposit deposit = new VdfDeposit();
             deposit.setDepositDate(request.getPaymentDate());
             deposit.setAmount(total);
-            deposit.setSourceType("VILLAGER");
             deposit.setSourceName(familyConfig.getMember().getFirstName() + " " + familyConfig.getMember().getLastName() + " - Bulk " + request.getYear());
             deposit.setMember(familyConfig.getMember());
             deposit.setCategory(villagerCategory);
@@ -614,8 +610,7 @@ public class VdfService {
         VdfSummaryResponse summary = new VdfSummaryResponse();
         summary.setTotalFamilies(Math.toIntExact(familyConfigRepository.count()));
         summary.setActiveContributors(Math.toIntExact(familyConfigRepository.countActiveContributors()));
-        summary.setTotalCollected(depositRepository.getTotalDeposits()
-                .add(contributionRepository.getTotalByYear(currentYear)));
+        summary.setTotalCollected(depositRepository.getTotalDeposits());
         summary.setTotalExpenses(expenseRepository.getTotalByYear(currentYear));
         summary.setCurrentBalance(summary.getTotalCollected().subtract(summary.getTotalExpenses()));
         summary.setCurrentYear(currentYear);
@@ -666,14 +661,29 @@ public class VdfService {
         response.setId(deposit.getId());
         response.setDepositDate(deposit.getDepositDate());
         response.setAmount(deposit.getAmount());
-        response.setSourceType(deposit.getSourceType());
         response.setSourceName(deposit.getSourceName());
         response.setYear(deposit.getYear());
         response.setNotes(deposit.getNotes());
 
         if (deposit.getMember() != null) {
+            response.setMemberId(deposit.getMember().getId());
             response.setMemberName(deposit.getMember().getFirstName() + " " +
                     deposit.getMember().getLastName());
+            
+            // Also populate the full member object for frontend filtering
+            MemberResponse memberResponse = new MemberResponse();
+            memberResponse.setId(deposit.getMember().getId());
+            memberResponse.setFirstName(deposit.getMember().getFirstName());
+            memberResponse.setLastName(deposit.getMember().getLastName());
+            memberResponse.setPhone(deposit.getMember().getPhone());
+            memberResponse.setIsOperator(deposit.getMember().getIsOperator());
+            memberResponse.setIsActive(deposit.getMember().getIsActive());
+            response.setMember(memberResponse);
+        }
+
+        if (deposit.getCategory() != null) {
+            response.setCategoryId(deposit.getCategory().getId());
+            response.setCategoryName(deposit.getCategory().getCategoryName());
         }
 
         return response;

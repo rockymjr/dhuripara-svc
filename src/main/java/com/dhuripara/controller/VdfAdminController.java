@@ -24,7 +24,7 @@ import java.util.UUID;
 @RequestMapping("/api/admin/vdf")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
 public class VdfAdminController {
 
     private final VdfService vdfService;
@@ -32,6 +32,7 @@ public class VdfAdminController {
     // ==================== DEPOSITS ====================
 
     @PostMapping("/deposits")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VdfDepositResponse> createDeposit(@Valid @RequestBody VdfDepositRequest request) {
         VdfDepositResponse response = vdfService.createDeposit(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -48,12 +49,14 @@ public class VdfAdminController {
     }
 
     @DeleteMapping("/deposits/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteDeposit(@PathVariable UUID id) {
         vdfService.deleteDeposit(id);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/deposits/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VdfDepositResponse> updateDeposit(@PathVariable UUID id, @Valid @RequestBody VdfDepositRequest request) {
         VdfDepositResponse response = vdfService.updateDeposit(id, request);
         return ResponseEntity.ok(response);
@@ -62,6 +65,7 @@ public class VdfAdminController {
     // ==================== EXPENSES ====================
 
     @PostMapping("/expenses")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VdfExpenseResponse> createExpense(@Valid @RequestBody VdfExpenseRequest request) {
         VdfExpenseResponse response = vdfService.createExpense(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -90,6 +94,7 @@ public class VdfAdminController {
     // ==================== FAMILY CONFIGURATION ====================
 
     @PostMapping("/families")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VdfFamilyConfigResponse> createFamily(
             @Valid @RequestBody VdfFamilyConfigRequest request) {
         VdfFamilyConfig config = vdfService.createOrUpdateFamilyConfig(request);
@@ -101,6 +106,7 @@ public class VdfAdminController {
     }
 
     @PutMapping("/families/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VdfFamilyConfigResponse> updateFamily(
             @PathVariable UUID id,
             @Valid @RequestBody VdfFamilyConfigRequest request) {
@@ -116,12 +122,14 @@ public class VdfAdminController {
     }
 
     @PostMapping("/family-exemptions")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> createFamilyExemption(@Valid @RequestBody com.dhuripara.dto.request.VdfExemptionRequest request) {
         vdfService.createExemption(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @DeleteMapping("/family-exemptions")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteFamilyExemption(@RequestParam java.util.UUID familyId, @RequestParam String monthYear) {
         vdfService.deleteExemption(familyId, monthYear);
         return ResponseEntity.ok().build();
@@ -130,12 +138,14 @@ public class VdfAdminController {
     // ==================== CONTRIBUTIONS ====================
 
     @PostMapping("/contributions")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> recordContribution(@Valid @RequestBody VdfContributionRequest request) {
         vdfService.recordContribution(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
     
     @PostMapping("/contributions/bulk")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> recordBulkContributions(@Valid @RequestBody com.dhuripara.dto.request.VdfBulkContributionRequest request) {
         try {
             vdfService.recordBulkContributions(request);
@@ -195,6 +205,7 @@ public class VdfAdminController {
     }
 
     @PutMapping("/expenses/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VdfExpenseResponse> updateExpense(
             @PathVariable UUID id,
             @Valid @RequestBody VdfExpenseRequest request) {
@@ -202,6 +213,7 @@ public class VdfAdminController {
     }
 
     @DeleteMapping("/expenses/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteExpense(@PathVariable UUID id) {
         vdfService.deleteExpense(id);
         return ResponseEntity.ok().build();

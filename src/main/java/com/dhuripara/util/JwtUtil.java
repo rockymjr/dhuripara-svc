@@ -53,18 +53,46 @@ public class JwtUtil {
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
+        // Create token without expiration (never expires)
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                // No expiration - token never expires until manually invalidated
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+    
+    // Overloaded method to create token with expiration if needed
+    public String generateTokenWithExpiration(String username, Long expirationMs) {
+        Map<String, Object> claims = new HashMap<>();
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(username)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public Boolean validateToken(String token, String username) {
-        final String extractedUsername = extractUsername(token);
-        return (extractedUsername.equals(username) && !isTokenExpired(token));
+        try {
+            final String extractedUsername = extractUsername(token);
+            // Check if token has expiration
+            try {
+                Date expiration = extractExpiration(token);
+                if (expiration != null) {
+                    return (extractedUsername.equals(username) && !isTokenExpired(token));
+                }
+            } catch (Exception e) {
+                // Token has no expiration claim (never expires) - this is expected for our non-expiring tokens
+            }
+            // Token without expiration - just validate username
+            return extractedUsername.equals(username);
+        } catch (Exception e) {
+            // Invalid token
+            return false;
+        }
     }
 
     private Key getSigningKey() {

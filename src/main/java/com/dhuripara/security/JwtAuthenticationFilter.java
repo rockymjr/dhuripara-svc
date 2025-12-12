@@ -2,6 +2,7 @@ package com.dhuripara.security;
 
 import com.dhuripara.model.Member;
 import com.dhuripara.repository.MemberRepository;
+import com.dhuripara.service.SessionService;
 import com.dhuripara.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -27,6 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final MemberRepository memberRepository;
+    private final SessionService sessionService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -46,7 +48,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         username = jwtUtil.extractUsername(jwt);
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            if (jwtUtil.validateToken(jwt, username)) {
+            // Check if session is still active
+            boolean isSessionActive = sessionService.getSessionByToken(jwt)
+                    .map(session -> session.getIsActive() != null && session.getIsActive())
+                    .orElse(false);
+            
+            if (jwtUtil.validateToken(jwt, username) && isSessionActive) {
+                // Update last activity
+                sessionService.updateLastActivity(jwt);
                 List<SimpleGrantedAuthority> authorities;
 
                 // Check if it's a member token (starts with MEMBER_)

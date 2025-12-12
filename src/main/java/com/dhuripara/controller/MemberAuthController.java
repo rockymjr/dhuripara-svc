@@ -24,8 +24,8 @@ public class MemberAuthController {
     private final MemberService memberService;
 
     @PostMapping("/auth/login")
-    public ResponseEntity<MemberAuthResponse> login(@Valid @RequestBody MemberLoginRequest request) {
-        MemberAuthResponse response = memberAuthService.authenticate(request);
+    public ResponseEntity<MemberAuthResponse> login(@Valid @RequestBody MemberLoginRequest request, jakarta.servlet.http.HttpServletRequest httpRequest) {
+        MemberAuthResponse response = memberAuthService.authenticate(request, httpRequest);
         return ResponseEntity.ok(response);
     }
 

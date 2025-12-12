@@ -37,8 +37,9 @@ public class MemberAuthService {
     private final LoanRepository loanRepository;
     private final JwtUtil jwtUtil;
     private final LoginAttemptService loginAttemptService; // NEW: Inject the helper service
+    private final SessionService sessionService;
 
-    public MemberAuthResponse authenticate(MemberLoginRequest request) {
+    public MemberAuthResponse authenticate(MemberLoginRequest request, jakarta.servlet.http.HttpServletRequest httpRequest) {
         Member member = memberRepository.findByPhoneAndIsActiveTrue(request.getPhone())
                 .orElseThrow(() -> new AuthenticationException("Invalid phone number or member not active"));
 
@@ -93,12 +94,16 @@ public class MemberAuthService {
 
         String token = jwtUtil.generateToken("MEMBER_" + member.getId().toString());
 
+        // Create session
+        String memberName = NameUtil.buildMemberName(member);
+        sessionService.createSession("MEMBER", member.getId(), memberName, token, httpRequest);
+
         MemberAuthResponse response = new MemberAuthResponse();
         response.setToken(token);
         response.setMemberId(member.getId());
-        response.setMemberName(NameUtil.buildMemberName(member));
+        response.setMemberName(member.getFirstName());
         response.setPhone(member.getPhone());
-        response.setExpiresIn(86400L);
+        response.setExpiresIn(null); // Never expires
         response.setIsOperator(member.getIsOperator());
         return response;
     }

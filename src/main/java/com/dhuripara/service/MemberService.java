@@ -48,6 +48,11 @@ public class MemberService {
         return memberRepository.findByIsActiveTrue()
                 .stream()
                 .map(this::convertToResponse)
+                .sorted((a, b) -> {
+                    String nameA = (a.getFirstName() != null ? a.getFirstName() : "") + " " + (a.getLastName() != null ? a.getLastName() : "");
+                    String nameB = (b.getFirstName() != null ? b.getFirstName() : "") + " " + (b.getLastName() != null ? b.getLastName() : "");
+                    return nameA.trim().compareToIgnoreCase(nameB.trim());
+                })
                 .collect(Collectors.toList());
     }
 
@@ -55,6 +60,11 @@ public class MemberService {
         return memberRepository.searchMembers(search)
                 .stream()
                 .map(this::convertToResponse)
+                .sorted((a, b) -> {
+                    String nameA = (a.getFirstName() != null ? a.getFirstName() : "") + " " + (a.getLastName() != null ? a.getLastName() : "");
+                    String nameB = (b.getFirstName() != null ? b.getFirstName() : "") + " " + (b.getLastName() != null ? b.getLastName() : "");
+                    return nameA.trim().compareToIgnoreCase(nameB.trim());
+                })
                 .collect(Collectors.toList());
     }
 

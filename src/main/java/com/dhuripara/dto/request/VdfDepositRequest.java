@@ -25,6 +25,8 @@ public class VdfDepositRequest {
     private UUID memberId; // Optional: if deposit is linked to a member
 
     private String notes;
+
+    private Boolean sendNotification = false; // Whether to send notification
 }
 
 

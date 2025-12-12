@@ -31,6 +31,7 @@ public class VdfService {
     private final VdfDepositCategoryRepository depositCategoryRepository;
     private final VdfFamilyExemptionRepository vdfFamilyExemptionRepository;
     private final VdfMonthlyConfigRepository vdfMonthlyConfigRepository;
+    private final VdfNotificationService notificationService;
 
     // ==================== DEPOSITS ====================
 
@@ -56,6 +57,40 @@ public class VdfService {
         }
 
         VdfDeposit saved = depositRepository.save(deposit);
+        
+        // Create notification if requested
+        if (Boolean.TRUE.equals(request.getSendNotification())) {
+            try {
+                if (request.getMemberId() != null) {
+                    // Member-specific deposit - notify only that member
+                    String title = "New Deposit Recorded";
+                    String titleBn = "নতুন জমা রেকর্ড করা হয়েছে";
+                    String message = String.format("A deposit of ₹%s has been recorded in your account.", 
+                        saved.getAmount());
+                    String messageBn = String.format("আপনার অ্যাকাউন্টে ₹%s এর একটি জমা রেকর্ড করা হয়েছে।", 
+                        saved.getAmount());
+                    notificationService.createNotificationForMember(
+                        request.getMemberId(), title, titleBn, message, messageBn, "DEPOSIT", saved.getId()
+                    );
+                } else {
+                    // Non-member deposit - notify everyone
+                    String title = "New Deposit Recorded";
+                    String titleBn = "নতুন জমা রেকর্ড করা হয়েছে";
+                    String message = String.format("A new deposit of ₹%s has been recorded. Category: %s", 
+                        saved.getAmount(), category.getCategoryName());
+                    String messageBn = String.format("₹%s এর একটি নতুন জমা রেকর্ড করা হয়েছে। বিভাগ: %s", 
+                        saved.getAmount(), 
+                        category.getCategoryNameBn() != null ? category.getCategoryNameBn() : category.getCategoryName());
+                    notificationService.createNotificationForAllMembers(
+                        title, titleBn, message, messageBn, "DEPOSIT", saved.getId()
+                    );
+                }
+            } catch (Exception e) {
+                log.error("Error creating notification for deposit: {}", saved.getId(), e);
+                // Don't fail the deposit creation if notification fails
+            }
+        }
+        
         return convertDepositToResponse(saved);
         }
 
@@ -70,7 +105,7 @@ public class VdfService {
         VdfDeposit deposit = depositRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Deposit not found"));
         depositRepository.deleteById(id);
-        log.info("VDF deposit deleted: {}", id);
+        log.info("VDF deposit deleted: {} (Amount: {})", id, deposit.getAmount());
     }
 
     @Transactional
@@ -123,6 +158,28 @@ public class VdfService {
         expense.setMonth(request.getExpenseDate().getMonth().getValue());
 
         VdfExpense saved = expenseRepository.save(expense);
+        
+        // Create notification if requested
+        if (Boolean.TRUE.equals(request.getSendNotification())) {
+            try {
+                // Expense notification goes to everyone
+                String title = "New Expense Recorded";
+                String titleBn = "নতুন খরচ রেকর্ড করা হয়েছে";
+                String message = String.format("A new expense of ₹%s has been recorded. Category: %s. Description: %s", 
+                    saved.getAmount(), category.getCategoryName(), saved.getDescription());
+                String messageBn = String.format("₹%s এর একটি নতুন খরচ রেকর্ড করা হয়েছে। বিভাগ: %s। বিবরণ: %s", 
+                    saved.getAmount(), 
+                    category.getCategoryNameBn() != null ? category.getCategoryNameBn() : category.getCategoryName(),
+                    saved.getDescriptionBn() != null ? saved.getDescriptionBn() : saved.getDescription());
+                notificationService.createNotificationForAllMembers(
+                    title, titleBn, message, messageBn, "EXPENSE", saved.getId()
+                );
+            } catch (Exception e) {
+                log.error("Error creating notification for expense: {}", saved.getId(), e);
+                // Don't fail the expense creation if notification fails
+            }
+        }
+        
         return convertExpenseToResponse(saved);
     }
 
@@ -137,7 +194,11 @@ public class VdfService {
         Map<String, BigDecimal> categoryExpenses = new HashMap<>();
 
         for (Object[] result : results) {
-            categoryExpenses.put((String) result[0], (BigDecimal) result[1]);
+            // result[0] is VdfExpenseCategory object, not String
+            VdfExpenseCategory category = (VdfExpenseCategory) result[0];
+            BigDecimal amount = (BigDecimal) result[1];
+            String categoryName = category.getCategoryName();
+            categoryExpenses.put(categoryName, amount);
         }
 
         return categoryExpenses;
@@ -627,6 +688,23 @@ public class VdfService {
         summary.setTotalExpenses(expenseRepository.getTotalByYear(currentYear));
         summary.setCurrentBalance(summary.getTotalCollected().subtract(summary.getTotalExpenses()));
         summary.setCurrentYear(currentYear);
+
+        // Calculate category-wise deposits
+        Map<String, BigDecimal> categoryDeposits = new HashMap<>();
+        List<VdfDeposit> allDeposits = depositRepository.findAll();
+        for (VdfDeposit deposit : allDeposits) {
+            if (deposit.getCategory() != null) {
+                String categoryName = deposit.getCategory().getCategoryName();
+                categoryDeposits.put(categoryName, 
+                    categoryDeposits.getOrDefault(categoryName, BigDecimal.ZERO)
+                        .add(deposit.getAmount()));
+            }
+        }
+        summary.setCategoryWiseDeposits(categoryDeposits);
+
+        // Calculate category-wise expenses
+        Map<String, BigDecimal> categoryExpenses = getCategoryExpenses(currentYear);
+        summary.setCategoryWiseExpenses(categoryExpenses);
 
         return summary;
     }

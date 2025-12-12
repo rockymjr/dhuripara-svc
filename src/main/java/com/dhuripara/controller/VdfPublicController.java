@@ -40,8 +40,16 @@ class VdfPublicController {
     @GetMapping("/expenses")
     public ResponseEntity<List<VdfExpenseResponse>> getExpenses(
             @RequestParam(required = false) Integer year) {
+        // If year is not specified, return all expenses (all years)
         if (year == null) {
-            year = java.time.LocalDate.now().getYear();
+            List<VdfExpenseResponse> allExpenses = new java.util.ArrayList<>();
+            int currentYear = java.time.LocalDate.now().getYear();
+            // Fetch expenses from last 5 years
+            for (int i = 0; i < 5; i++) {
+                int yearToFetch = currentYear - i;
+                allExpenses.addAll(vdfService.getExpensesByYear(yearToFetch));
+            }
+            return ResponseEntity.ok(allExpenses);
         }
         List<VdfExpenseResponse> expenses = vdfService.getExpensesByYear(year);
         return ResponseEntity.ok(expenses);

@@ -25,4 +25,6 @@ public class VdfExpenseRequest {
     private String descriptionBn;
 
     private String notes;
+
+    private Boolean sendNotification = false; // Whether to send notification to all users
 }

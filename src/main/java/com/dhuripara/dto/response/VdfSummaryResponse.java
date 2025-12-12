@@ -2,6 +2,7 @@ package com.dhuripara.dto.response;
 
 import lombok.Data;
 import java.math.BigDecimal;
+import java.util.Map;
 
 @Data
 public class VdfSummaryResponse {
@@ -11,4 +12,6 @@ public class VdfSummaryResponse {
     private BigDecimal totalExpenses;
     private BigDecimal currentBalance;
     private Integer currentYear;
+    private Map<String, BigDecimal> categoryWiseDeposits; // Category name -> total amount
+    private Map<String, BigDecimal> categoryWiseExpenses; // Category name -> total amount
 }

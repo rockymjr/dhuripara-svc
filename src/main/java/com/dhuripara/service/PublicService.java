@@ -2,11 +2,14 @@ package com.dhuripara.service;
 
 import com.dhuripara.dto.response.MaskedDepositResponse;
 import com.dhuripara.dto.response.MaskedLoanResponse;
+import com.dhuripara.dto.response.MemberResponse;
 import com.dhuripara.dto.response.SummaryResponse;
 import com.dhuripara.model.Deposit;
 import com.dhuripara.model.Loan;
+import com.dhuripara.model.Member;
 import com.dhuripara.repository.DepositRepository;
 import com.dhuripara.repository.LoanRepository;
+import com.dhuripara.repository.MemberRepository;
 import com.dhuripara.util.NameMaskingUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +27,7 @@ public class PublicService {
 
     private final DepositRepository depositRepository;
     private final LoanRepository loanRepository;
+    private final MemberRepository memberRepository;
 
     public SummaryResponse getSummary() {
         // Get ALL deposits and loans
@@ -135,6 +140,32 @@ public class PublicService {
         response.setLoanAmount(loan.getLoanAmount());
         response.setLoanDate(loan.getLoanDate());
         response.setStatus(loan.getStatus());
+        return response;
+    }
+
+    public List<MemberResponse> getActiveMembersForPublic() {
+        return memberRepository.findByIsActiveTrue()
+                .stream()
+                .map(this::convertToMemberResponse)
+                .sorted((a, b) -> {
+                    String nameA = (a.getFirstName() != null ? a.getFirstName() : "") + " " + (a.getLastName() != null ? a.getLastName() : "");
+                    String nameB = (b.getFirstName() != null ? b.getFirstName() : "") + " " + (b.getLastName() != null ? b.getLastName() : "");
+                    return nameA.trim().compareToIgnoreCase(nameB.trim());
+                })
+                .collect(Collectors.toList());
+    }
+
+    private MemberResponse convertToMemberResponse(Member member) {
+        MemberResponse response = new MemberResponse();
+        response.setId(member.getId());
+        response.setFirstName(member.getFirstName());
+        response.setLastName(member.getLastName());
+        response.setFirstNameBn(member.getFirstNameBn());
+        response.setLastNameBn(member.getLastNameBn());
+        response.setPhone(member.getPhone());
+        response.setJoiningDate(member.getJoiningDate());
+        response.setIsActive(member.getIsActive());
+        response.setIsOperator(member.getIsOperator());
         return response;
     }
 }

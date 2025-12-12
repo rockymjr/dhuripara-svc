@@ -2,6 +2,7 @@ package com.dhuripara.controller;
 
 import com.dhuripara.dto.response.MaskedDepositResponse;
 import com.dhuripara.dto.response.MaskedLoanResponse;
+import com.dhuripara.dto.response.MemberResponse;
 import com.dhuripara.dto.response.SummaryResponse;
 import com.dhuripara.service.PublicService;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/public")
@@ -41,5 +44,10 @@ public class PublicController {
                 PageRequest.of(page, size)
         );
         return ResponseEntity.ok(loans);
+    }
+
+    @GetMapping("/members")
+    public ResponseEntity<List<com.dhuripara.dto.response.MemberResponse>> getActiveMembers() {
+        return ResponseEntity.ok(publicService.getActiveMembersForPublic());
     }
 }

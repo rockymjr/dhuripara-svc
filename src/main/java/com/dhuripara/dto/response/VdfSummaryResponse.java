@@ -14,4 +14,6 @@ public class VdfSummaryResponse {
     private Integer currentYear;
     private Map<String, BigDecimal> categoryWiseDeposits; // Category name -> total amount
     private Map<String, BigDecimal> categoryWiseExpenses; // Category name -> total amount
+    private Map<String, BigDecimal> categoryWiseDepositsBn; // Bengali category name -> total amount
+    private Map<String, BigDecimal> categoryWiseExpensesBn; // Bengali category name -> total amount
 }

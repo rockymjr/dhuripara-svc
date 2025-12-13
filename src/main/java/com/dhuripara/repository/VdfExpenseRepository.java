@@ -18,9 +18,15 @@ public interface VdfExpenseRepository extends JpaRepository<VdfExpense, UUID> {
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM VdfExpense e WHERE e.year = :year")
     BigDecimal getTotalByYear(@Param("year") Integer year);
 
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM VdfExpense e")
+    BigDecimal getTotalAllYears();
+
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM VdfExpense e WHERE e.year = :year AND e.month = :month")
     BigDecimal getTotalByYearAndMonth(@Param("year") Integer year, @Param("month") Integer month);
 
     @Query("SELECT e.category, SUM(e.amount) FROM VdfExpense e WHERE e.year = :year GROUP BY e.category")
     List<Object[]> getCategoryTotalsByYear(@Param("year") Integer year);
+
+    @Query("SELECT e.category, SUM(e.amount) FROM VdfExpense e GROUP BY e.category")
+    List<Object[]> getCategoryTotalsAllYears();
 }

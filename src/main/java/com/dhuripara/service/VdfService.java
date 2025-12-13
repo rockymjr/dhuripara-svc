@@ -685,26 +685,45 @@ public class VdfService {
         summary.setTotalFamilies(Math.toIntExact(familyConfigRepository.count()));
         summary.setActiveContributors(Math.toIntExact(familyConfigRepository.countActiveContributors()));
         summary.setTotalCollected(depositRepository.getTotalDeposits());
-        summary.setTotalExpenses(expenseRepository.getTotalByYear(currentYear));
+        // Use all-years total for expenses
+        summary.setTotalExpenses(expenseRepository.getTotalAllYears());
         summary.setCurrentBalance(summary.getTotalCollected().subtract(summary.getTotalExpenses()));
         summary.setCurrentYear(currentYear);
 
         // Calculate category-wise deposits
         Map<String, BigDecimal> categoryDeposits = new HashMap<>();
+        Map<String, BigDecimal> categoryDepositsBn = new HashMap<>();
         List<VdfDeposit> allDeposits = depositRepository.findAll();
         for (VdfDeposit deposit : allDeposits) {
             if (deposit.getCategory() != null) {
                 String categoryName = deposit.getCategory().getCategoryName();
-                categoryDeposits.put(categoryName, 
+                String categoryNameBn = deposit.getCategory().getCategoryNameBn() != null ?
+                    deposit.getCategory().getCategoryNameBn() : deposit.getCategory().getCategoryName();
+                categoryDeposits.put(categoryName,
                     categoryDeposits.getOrDefault(categoryName, BigDecimal.ZERO)
+                        .add(deposit.getAmount()));
+                categoryDepositsBn.put(categoryNameBn,
+                    categoryDepositsBn.getOrDefault(categoryNameBn, BigDecimal.ZERO)
                         .add(deposit.getAmount()));
             }
         }
         summary.setCategoryWiseDeposits(categoryDeposits);
+        summary.setCategoryWiseDepositsBn(categoryDepositsBn);
 
-        // Calculate category-wise expenses
-        Map<String, BigDecimal> categoryExpenses = getCategoryExpenses(currentYear);
+        // Calculate category-wise expenses across all years (EN and BN)
+        Map<String, BigDecimal> categoryExpenses = new HashMap<>();
+        Map<String, BigDecimal> categoryExpensesBn = new HashMap<>();
+        List<Object[]> categoryTotals = expenseRepository.getCategoryTotalsAllYears();
+        for (Object[] o : categoryTotals) {
+            VdfExpenseCategory category = (VdfExpenseCategory) o[0];
+            BigDecimal amount = (BigDecimal) o[1];
+            String en = category.getCategoryName();
+            String bn = category.getCategoryNameBn() != null ? category.getCategoryNameBn() : en;
+            categoryExpenses.put(en, amount);
+            categoryExpensesBn.put(bn, amount);
+        }
         summary.setCategoryWiseExpenses(categoryExpenses);
+        summary.setCategoryWiseExpensesBn(categoryExpensesBn);
 
         return summary;
     }

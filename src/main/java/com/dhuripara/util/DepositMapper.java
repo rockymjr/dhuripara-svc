@@ -5,7 +5,6 @@ import com.dhuripara.model.Deposit;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import com.dhuripara.util.NameUtil;
 
 public class DepositMapper {
 

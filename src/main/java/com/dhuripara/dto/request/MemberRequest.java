@@ -3,6 +3,9 @@ package com.dhuripara.dto.request;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
+import java.time.LocalDate;
+import java.util.UUID;
+
 @Data
 public class MemberRequest {
 
@@ -26,6 +29,21 @@ public class MemberRequest {
 
     @Pattern(regexp = "^[0-9]{4}$", message = "PIN must be 4 digits")
     private String pin;
+
+    private LocalDate dateOfBirth;
+
+    @Size(max = 12)
+    @Pattern(regexp = "^$|^[0-9]{12}$", message = "Aadhar number must be 12 digits or empty")
+    private String aadharNo;
+
+    @Size(max = 20)
+    private String voterNo;
+
+    @Size(max = 10)
+    @Pattern(regexp = "^$|^[A-Z]{5}[0-9]{4}[A-Z]{1}$", message = "PAN must be in format ABCDE1234F or empty")
+    private String panNo;
+
+    private UUID familyId; // Link to VdfFamilyConfig
 
     private Boolean isOperator = false;
 

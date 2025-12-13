@@ -6,41 +6,30 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "vdf_family_config")
+@Table(name = "document_categories")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class VdfFamilyConfig {
+public class DocumentCategory {
 
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member; // Primary member/head of the family (no longer unique - multiple families can have same head if needed)
+    @Column(name = "category_name", nullable = false, unique = true, length = 100)
+    private String categoryName;
 
-    @Column(name = "family_head_name", nullable = false, length = 200)
-    private String familyHeadName;
+    @Column(name = "description", length = 500)
+    private String description;
 
-    @Column(name = "is_contribution_enabled")
-    private Boolean isContributionEnabled = false;
-
-    @Column(name = "effective_from")
-    private LocalDate effectiveFrom;
-
-    @Column(name = "monthly_amount", precision = 10, scale = 2)
-    private BigDecimal monthlyAmount = new BigDecimal("20.00");
-
-    @Column(name = "notes", columnDefinition = "TEXT")
-    private String notes;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -59,3 +48,4 @@ public class VdfFamilyConfig {
         updatedAt = LocalDateTime.now();
     }
 }
+

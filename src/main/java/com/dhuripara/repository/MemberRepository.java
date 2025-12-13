@@ -28,4 +28,6 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
     Optional<Member> findByPhoneAndIsActiveTrue(String phone);
 
     List<Member> findByIsOperatorTrueAndIsActiveTrue();
+
+    List<Member> findByFamilyIdAndIsActiveTrue(UUID familyId);
 }

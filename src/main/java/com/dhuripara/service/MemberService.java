@@ -35,6 +35,11 @@ public class MemberService {
         member.setLastNameBn(request.getLastNameBn());
         member.setPhone(request.getPhone());
         member.setPin(request.getPin());
+        member.setDateOfBirth(request.getDateOfBirth());
+        member.setAadharNo(request.getAadharNo());
+        member.setVoterNo(request.getVoterNo());
+        member.setPanNo(request.getPanNo());
+        member.setFamilyId(request.getFamilyId());
         member.setJoiningDate(LocalDate.now());
         member.setIsActive(true);
         member.setIsBlocked(false);
@@ -85,6 +90,11 @@ public class MemberService {
         member.setLastNameBn(request.getLastNameBn());
         member.setPhone(request.getPhone());
         member.setPin(request.getPin());
+        member.setDateOfBirth(request.getDateOfBirth());
+        member.setAadharNo(request.getAadharNo());
+        member.setVoterNo(request.getVoterNo());
+        member.setPanNo(request.getPanNo());
+        member.setFamilyId(request.getFamilyId());
         member.setIsOperator(request.getIsOperator());
 
         Member updatedMember = memberRepository.save(member);
@@ -143,6 +153,11 @@ public class MemberService {
         response.setIsBlocked(member.isCurrentlyBlocked());
         response.setBlockedUntil(member.getBlockedUntil());
         response.setFailedLoginAttempts(member.getFailedLoginAttempts());
+        response.setDateOfBirth(member.getDateOfBirth());
+        response.setAadharNo(member.getAadharNo());
+        response.setVoterNo(member.getVoterNo());
+        response.setPanNo(member.getPanNo());
+        response.setFamilyId(member.getFamilyId());
         return response;
     }
 }

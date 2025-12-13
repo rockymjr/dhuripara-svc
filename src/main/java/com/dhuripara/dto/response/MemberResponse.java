@@ -22,4 +22,9 @@ public class MemberResponse {
     private Boolean isBlocked;
     private LocalDateTime blockedUntil;
     private Integer failedLoginAttempts;
+    private LocalDate dateOfBirth;
+    private String aadharNo;
+    private String voterNo;
+    private String panNo;
+    private UUID familyId;
 }

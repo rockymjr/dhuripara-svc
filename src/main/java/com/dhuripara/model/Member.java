@@ -41,6 +41,21 @@ public class Member {
     @Column(name = "pin", length = 4)
     private String pin;
 
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
+    @Column(name = "aadhar_no", length = 12)
+    private String aadharNo;
+
+    @Column(name = "voter_no", length = 20)
+    private String voterNo;
+
+    @Column(name = "pan_no", length = 10)
+    private String panNo;
+
+    @Column(name = "family_id")
+    private UUID familyId; // Link to VdfFamilyConfig for family relationship
+
     @Column(name = "is_operator")
     private Boolean isOperator = false;
 

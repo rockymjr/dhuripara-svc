@@ -3,6 +3,7 @@ package com.dhuripara.controller;
 import com.dhuripara.dto.response.MemberDocumentResponse;
 import com.dhuripara.service.DocumentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/member/documents")
 @RequiredArgsConstructor
@@ -32,12 +34,16 @@ public class MemberDocumentController {
 
     @GetMapping("/family-documents")
     public ResponseEntity<List<MemberDocumentResponse>> getFamilyDocuments(Authentication authentication) {
-        String username = authentication.getName();
-        UUID memberId = UUID.fromString(username.replace("MEMBER_", ""));
         try {
+            String username = authentication.getName();
+            UUID memberId = UUID.fromString(username.replace("MEMBER_", ""));
             return ResponseEntity.ok(documentService.getFamilyDocuments(memberId));
+        } catch (IllegalArgumentException e) {
+            // Member not associated with family - return empty list
+            return ResponseEntity.ok(List.of());
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            log.error("Error fetching family documents", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -86,7 +92,8 @@ public class MemberDocumentController {
                     .contentType(mediaType)
                     .body(resource);
         } catch (Exception e) {
-            return ResponseEntity.status(500).build();
+            log.error("Error downloading document", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -98,7 +105,12 @@ public class MemberDocumentController {
             
             // Verify document belongs to member or their family
             List<MemberDocumentResponse> myDocs = documentService.getMemberDocuments(memberId);
-            List<MemberDocumentResponse> familyDocs = documentService.getFamilyDocuments(memberId);
+            List<MemberDocumentResponse> familyDocs;
+            try {
+                familyDocs = documentService.getFamilyDocuments(memberId);
+            } catch (Exception e) {
+                familyDocs = List.of(); // If family documents can't be fetched, use empty list
+            }
             
             boolean hasAccess = myDocs.stream().anyMatch(d -> d.getId().equals(documentId)) ||
                                familyDocs.stream().anyMatch(d -> d.getId().equals(documentId));
@@ -108,9 +120,12 @@ public class MemberDocumentController {
             }
 
             String url = documentService.getDocumentDownloadUrl(documentId);
-            return ResponseEntity.ok(url);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(url);
         } catch (Exception e) {
-            return ResponseEntity.status(500).build();
+            log.error("Error getting document URL", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

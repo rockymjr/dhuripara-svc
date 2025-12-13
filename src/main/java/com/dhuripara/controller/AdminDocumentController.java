@@ -71,5 +71,42 @@ public class AdminDocumentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @GetMapping("/{documentId}/download")
+    public ResponseEntity<org.springframework.core.io.InputStreamResource> downloadDocument(
+            @PathVariable UUID documentId) {
+        try {
+            java.io.InputStream inputStream = documentService.downloadDocument(documentId);
+            org.springframework.core.io.InputStreamResource resource = 
+                    new org.springframework.core.io.InputStreamResource(inputStream);
+            
+            // Get document info for headers
+            com.dhuripara.model.MemberDocument document = documentService.getDocumentById(documentId);
+
+            org.springframework.http.MediaType mediaType = document.getContentType().startsWith("image/") 
+                ? org.springframework.http.MediaType.IMAGE_JPEG 
+                : org.springframework.http.MediaType.APPLICATION_PDF;
+
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, 
+                            "attachment; filename=\"" + document.getOriginalFileName() + "\"")
+                    .contentType(mediaType)
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/{documentId}/url")
+    public ResponseEntity<String> getDocumentUrl(@PathVariable UUID documentId) {
+        try {
+            String url = documentService.getDocumentDownloadUrl(documentId);
+            return ResponseEntity.ok()
+                    .contentType(org.springframework.http.MediaType.TEXT_PLAIN)
+                    .body(url);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }
 

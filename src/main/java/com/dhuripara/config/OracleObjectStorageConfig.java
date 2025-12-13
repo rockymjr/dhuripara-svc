@@ -5,6 +5,8 @@ import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.ObjectStorageClient;
+import com.oracle.bmc.objectstorage.requests.GetNamespaceRequest;
+import com.oracle.bmc.objectstorage.responses.GetNamespaceResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -23,7 +25,7 @@ public class OracleObjectStorageConfig {
     private String profile;
 
     @Value("${oracle.objectstorage.namespace:}")
-    private String namespace;
+    private String configuredNamespace;
 
     @Value("${oracle.objectstorage.bucket-name:dhuripara-documents}")
     private String bucketName;
@@ -41,8 +43,29 @@ public class OracleObjectStorageConfig {
     }
 
     @Bean
-    public String objectStorageNamespace() {
-        return namespace;
+    public String objectStorageNamespace(ObjectStorage objectStorageClient) {
+        // If namespace is explicitly configured and not empty, use it
+        if (configuredNamespace != null && !configuredNamespace.trim().isEmpty()) {
+            // Validate that it's not an OCID (OCIDs contain colons)
+            if (!configuredNamespace.contains(":")) {
+                log.info("Using configured namespace: {}", configuredNamespace);
+                return configuredNamespace;
+            } else {
+                log.warn("Configured namespace appears to be an OCID (contains ':'), will retrieve namespace name from API");
+            }
+        }
+        
+        // Otherwise, retrieve it from the Object Storage API
+        try {
+            GetNamespaceRequest getNamespaceRequest = GetNamespaceRequest.builder().build();
+            GetNamespaceResponse namespaceResponse = objectStorageClient.getNamespace(getNamespaceRequest);
+            String namespace = namespaceResponse.getValue();
+            log.info("Retrieved namespace from Object Storage API: {}", namespace);
+            return namespace;
+        } catch (Exception e) {
+            log.error("Failed to retrieve namespace from Object Storage API", e);
+            throw new RuntimeException("Failed to retrieve namespace from Object Storage API. Please configure oracle.objectstorage.namespace with the namespace name (not OCID)", e);
+        }
     }
 
     @Bean

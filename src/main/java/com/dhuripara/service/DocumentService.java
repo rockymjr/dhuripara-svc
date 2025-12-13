@@ -121,6 +121,11 @@ public class DocumentService {
         return objectStorageService.generatePreSignedUrl(document.getObjectStoragePath(), 1);
     }
 
+    public MemberDocument getDocumentById(UUID documentId) {
+        return documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
+    }
+
     @Transactional
     public void deleteDocument(UUID documentId) throws Exception {
         MemberDocument document = documentRepository.findById(documentId)

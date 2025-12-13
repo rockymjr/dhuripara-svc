@@ -4,9 +4,8 @@ import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.model.CreatePreauthenticatedRequestDetails;
 import com.oracle.bmc.objectstorage.requests.*;
 import com.oracle.bmc.objectstorage.responses.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,16 +15,29 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class OracleObjectStorageService {
 
     private final ObjectStorage objectStorageClient;
+    private final String objectStorageNamespace;
+    private final String objectStorageBucketName;
     
-    @Value("${oracle.objectstorage.namespace:}")
-    private String namespace;
+    public OracleObjectStorageService(
+            ObjectStorage objectStorageClient,
+            @Qualifier("objectStorageNamespace") String objectStorageNamespace,
+            @Qualifier("objectStorageBucketName") String objectStorageBucketName) {
+        this.objectStorageClient = objectStorageClient;
+        this.objectStorageNamespace = objectStorageNamespace;
+        this.objectStorageBucketName = objectStorageBucketName;
+    }
     
-    @Value("${oracle.objectstorage.bucket-name:dhuripara-documents}")
-    private String bucketName;
+    // Use the namespace and bucket name from beans
+    private String getNamespace() {
+        return objectStorageNamespace;
+    }
+    
+    private String getBucketName() {
+        return objectStorageBucketName;
+    }
 
     public String uploadFile(MultipartFile file, String folderPath) throws Exception {
         String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
@@ -35,8 +47,8 @@ public class OracleObjectStorageService {
 
         try (InputStream inputStream = file.getInputStream()) {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .namespaceName(namespace)
-                    .bucketName(bucketName)
+                    .namespaceName(getNamespace())
+                    .bucketName(getBucketName())
                     .putObjectBody(inputStream)
                     .objectName(objectName)
                     .contentType(file.getContentType())
@@ -55,8 +67,8 @@ public class OracleObjectStorageService {
     public InputStream downloadFile(String objectName) throws Exception {
         try {
             GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                    .namespaceName(namespace)
-                    .bucketName(bucketName)
+                    .namespaceName(getNamespace())
+                    .bucketName(getBucketName())
                     .objectName(objectName)
                     .build();
 
@@ -82,8 +94,8 @@ public class OracleObjectStorageService {
                     .build();
 
             CreatePreauthenticatedRequestRequest request = CreatePreauthenticatedRequestRequest.builder()
-                    .namespaceName(namespace)
-                    .bucketName(bucketName)
+                    .namespaceName(getNamespace())
+                    .bucketName(getBucketName())
                     .createPreauthenticatedRequestDetails(details)
                     .build();
 
@@ -102,8 +114,8 @@ public class OracleObjectStorageService {
     public void deleteFile(String objectName) throws Exception {
         try {
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                    .namespaceName(namespace)
-                    .bucketName(bucketName)
+                    .namespaceName(getNamespace())
+                    .bucketName(getBucketName())
                     .objectName(objectName)
                     .build();
 

@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS member_documents (
     notes VARCHAR(1000),
     CONSTRAINT fk_member_document_member FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
     CONSTRAINT fk_member_document_category FOREIGN KEY (document_category_id) REFERENCES document_categories(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_member_document_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES admin_users(id) ON DELETE RESTRICT
+    CONSTRAINT fk_member_document_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES members(id) ON DELETE RESTRICT
 );
 
 -- Create indexes

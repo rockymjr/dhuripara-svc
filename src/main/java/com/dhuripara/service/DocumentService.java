@@ -39,7 +39,7 @@ public class DocumentService {
     }
 
     @Transactional
-    public MemberDocumentResponse uploadDocument(DocumentUploadRequest request, UUID adminUserId) throws Exception {
+    public MemberDocumentResponse uploadDocument(DocumentUploadRequest request, UUID uploaderMemberId) throws Exception {
         // Validate member
         Member member = memberRepository.findById(request.getMemberId())
                 .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
@@ -76,7 +76,7 @@ public class DocumentService {
         document.setFileSize(file.getSize());
         document.setContentType(contentType);
         document.setObjectStoragePath(objectStoragePath);
-        document.setUploadedBy(adminUserId);
+        document.setUploadedBy(uploaderMemberId);
         document.setNotes(request.getNotes());
 
         MemberDocument saved = documentRepository.save(document);

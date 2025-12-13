@@ -46,7 +46,7 @@ public class MemberDocument {
     private String objectStoragePath; // Full path in Oracle Object Storage
 
     @Column(name = "uploaded_by", nullable = false)
-    private UUID uploadedBy; // Admin user ID
+    private UUID uploadedBy; // Member user ID (uploader)
 
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private LocalDateTime uploadedAt;

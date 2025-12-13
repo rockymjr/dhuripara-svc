@@ -23,6 +23,7 @@ import java.util.UUID;
 public class AdminDocumentController {
 
     private final DocumentService documentService;
+        private final com.dhuripara.repository.AdminUserRepository adminUserRepository;
 
     @GetMapping("/categories")
     public ResponseEntity<List<DocumentCategoryResponse>> getAllCategories() {
@@ -38,14 +39,25 @@ public class AdminDocumentController {
             Authentication authentication) {
         try {
             String username = authentication.getName();
-            UUID adminUserId;
+            UUID uploaderMemberId;
             // Expect admin sessions to be MEMBER_<id> tokens (admins are now members with ADMIN role)
             if (username != null && username.startsWith("MEMBER_")) {
-                adminUserId = UUID.fromString(username.replace("MEMBER_", ""));
+                uploaderMemberId = UUID.fromString(username.replace("MEMBER_", ""));
             } else {
                 // If not a member token, we cannot resolve admin user - reject
                 throw new RuntimeException("Invalid admin principal: unable to determine user id");
             }
+                // Ensure there is an admin_users entry for this uploader if the DB still enforces that FK
+                if (!adminUserRepository.existsById(uploaderMemberId)) {
+                    // Create a minimal admin user record to satisfy foreign key constraints
+                    com.dhuripara.model.AdminUser newAdmin = new com.dhuripara.model.AdminUser();
+                    newAdmin.setId(uploaderMemberId);
+                    newAdmin.setUsername("MEMBER_" + uploaderMemberId.toString());
+                    newAdmin.setPassword(java.util.UUID.randomUUID().toString());
+                    newAdmin.setEmail(uploaderMemberId.toString() + "@local");
+                    newAdmin.setRole("ADMIN");
+                    adminUserRepository.save(newAdmin);
+                }
             
             DocumentUploadRequest request = new DocumentUploadRequest();
             request.setMemberId(memberId);
@@ -53,7 +65,7 @@ public class AdminDocumentController {
             request.setFile(file);
             request.setNotes(notes);
 
-            MemberDocumentResponse response = documentService.uploadDocument(request, adminUserId);
+            MemberDocumentResponse response = documentService.uploadDocument(request, uploaderMemberId);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

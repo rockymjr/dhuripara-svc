@@ -57,7 +57,13 @@ public class MemberDocumentController {
             
             // Verify document belongs to member or their family
             List<MemberDocumentResponse> myDocs = documentService.getMemberDocuments(memberId);
-            List<MemberDocumentResponse> familyDocs = documentService.getFamilyDocuments(memberId);
+            List<MemberDocumentResponse> familyDocs;
+            try {
+                familyDocs = documentService.getFamilyDocuments(memberId);
+            } catch (IllegalArgumentException e) {
+                // Member not associated with family - treat as no family docs
+                familyDocs = List.of();
+            }
             
             boolean hasAccess = myDocs.stream().anyMatch(d -> d.getId().equals(documentId)) ||
                                familyDocs.stream().anyMatch(d -> d.getId().equals(documentId));

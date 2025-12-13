@@ -33,7 +33,7 @@ public class VdfFamilyExemption {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exempted_by")
-    private AdminUser exemptedBy;
+    private Member exemptedBy;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

@@ -1,8 +1,8 @@
 package com.dhuripara.controller;
 
-import com.dhuripara.dto.request.LoginRequest;
-import com.dhuripara.dto.response.AuthResponse;
-import com.dhuripara.service.AuthService;
+import com.dhuripara.dto.request.MemberLoginRequest;
+import com.dhuripara.dto.response.MemberAuthResponse;
+import com.dhuripara.service.MemberAuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,11 +15,11 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "*")
 public class AdminAuthController {
 
-    private final AuthService authService;
+    private final MemberAuthService memberAuthService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
-        AuthResponse response = authService.authenticate(request, httpRequest);
+    public ResponseEntity<MemberAuthResponse> login(@Valid @RequestBody MemberLoginRequest request, HttpServletRequest httpRequest) {
+        MemberAuthResponse response = memberAuthService.authenticate(request, httpRequest);
         return ResponseEntity.ok(response);
     }
 }

@@ -12,7 +12,9 @@ public class MemberLoginRequest {
     @Pattern(regexp = "^[0-9]{10}$", message = "Phone must be 10 digits")
     private String phone;
 
-    @NotBlank(message = "PIN is required")
-    @Pattern(regexp = "^[0-9]{4}$", message = "PIN must be 4 digits")
+    // PIN will be used by Member and Operator; Admins must login using password
     private String pin;
+
+    // Password will be used by Admin users; stored in DB as BCrypt hashed
+    private String password;
 }

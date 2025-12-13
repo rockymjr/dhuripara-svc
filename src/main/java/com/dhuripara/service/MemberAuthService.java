@@ -16,6 +16,7 @@ import com.dhuripara.util.JwtUtil;
 import com.dhuripara.util.LoanMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -36,8 +37,9 @@ public class MemberAuthService {
     private final DepositRepository depositRepository;
     private final LoanRepository loanRepository;
     private final JwtUtil jwtUtil;
-    private final LoginAttemptService loginAttemptService; // NEW: Inject the helper service
+        private final LoginAttemptService loginAttemptService; // NEW: Inject the helper service
     private final SessionService sessionService;
+        private final PasswordEncoder passwordEncoder;
 
     public MemberAuthResponse authenticate(MemberLoginRequest request, jakarta.servlet.http.HttpServletRequest httpRequest) {
         Member member = memberRepository.findByPhoneAndIsActiveTrue(request.getPhone())
@@ -53,37 +55,62 @@ public class MemberAuthService {
             );
         }
 
-        if (member.getPin() == null || member.getPin().isEmpty()) {
-            throw new AuthenticationException("PIN not set for this member. Please contact admin.");
-        }
+                // If the user is ADMIN, require password; for MEMBER/OPERATOR, require PIN
+                if ("ADMIN".equalsIgnoreCase(member.getRole())) {
+                        if (member.getPassword() == null || member.getPassword().isEmpty()) {
+                                throw new AuthenticationException("Password not set for admin. Please contact support.");
+                        }
+                        if (request.getPassword() == null || request.getPassword().isEmpty()) {
+                                throw new AuthenticationException("Password is required for admin login.");
+                        }
+                        // Check password using PasswordEncoder
+                        if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
+                                // Record failed attempt
+                                try { loginAttemptService.recordFailedAttempt(member.getId()); } catch (Exception e) { log.error("Error recording failed login attempt for member: {}", member.getId(), e); }
+                                member = loginAttemptService.getMember(member.getId());
+                                int remainingAttempts = Math.max(0, 3 - member.getFailedLoginAttempts());
+                                if (member.isCurrentlyBlocked()) {
+                                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm");
+                                        String blockedUntilStr = member.getBlockedUntil().format(formatter);
+                                        throw new AuthenticationException(
+                                                        "Invalid password. Account is now blocked until " + blockedUntilStr + ". Please contact admin to unblock."
+                                        );
+                                }
+                                throw new AuthenticationException("Invalid password. " + remainingAttempts + " attempt(s) remaining before account is blocked.");
+                        }
+                } else {
+                        if (member.getPin() == null || member.getPin().isEmpty()) {
+                                throw new AuthenticationException("PIN not set for this member. Please contact admin.");
+                        }
 
-        // Check PIN
-        if (!member.getPin().equals(request.getPin())) {
-            // Record failed attempt in separate transaction (will commit even if we throw exception)
-            try {
-                loginAttemptService.recordFailedAttempt(member.getId());
-            } catch (Exception e) {
-                log.error("Error recording failed login attempt for member: {}", member.getId(), e);
-            }
+                        // Check PIN
+                        if (!member.getPin().equals(request.getPin())) {
+                                // Record failed attempt in separate transaction (will commit even if we throw exception)
+                                try {
+                                        loginAttemptService.recordFailedAttempt(member.getId());
+                                } catch (Exception e) {
+                                        log.error("Error recording failed login attempt for member: {}", member.getId(), e);
+                                }
 
-            // Reload member to get updated attempt count from database
-            member = loginAttemptService.getMember(member.getId());
+                                // Reload member to get updated attempt count from database
+                                member = loginAttemptService.getMember(member.getId());
 
-            int remainingAttempts = Math.max(0, 3 - member.getFailedLoginAttempts());
+                                int remainingAttempts = Math.max(0, 3 - member.getFailedLoginAttempts());
 
-            if (member.isCurrentlyBlocked()) {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm");
-                String blockedUntilStr = member.getBlockedUntil().format(formatter);
-                throw new AuthenticationException(
-                        "Invalid PIN. Account is now blocked until " + blockedUntilStr +
-                                ". Please contact admin to unblock."
-                );
-            }
+                                if (member.isCurrentlyBlocked()) {
+                                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm");
+                                        String blockedUntilStr = member.getBlockedUntil().format(formatter);
+                                        throw new AuthenticationException(
+                                                        "Invalid PIN. Account is now blocked until " + blockedUntilStr +
+                                                                        ". Please contact admin to unblock."
+                                        );
+                                }
 
-            throw new AuthenticationException(
-                    "Invalid PIN. " + remainingAttempts + " attempt(s) remaining before account is blocked."
-            );
-        }
+                                throw new AuthenticationException(
+                                                "Invalid PIN. " + remainingAttempts + " attempt(s) remaining before account is blocked."
+                                );
+                        }
+                }
 
         // Successful login - reset failed attempts in separate transaction
         try {
@@ -94,9 +121,9 @@ public class MemberAuthService {
 
         String token = jwtUtil.generateToken("MEMBER_" + member.getId().toString());
 
-        // Create session
+        // Create session using role stored on member
         String memberName = NameUtil.buildMemberName(member);
-        sessionService.createSession("MEMBER", member.getId(), memberName, token, httpRequest);
+        sessionService.createSession(member.getRole() != null ? member.getRole() : "MEMBER", member.getId(), memberName, token, httpRequest);
 
         MemberAuthResponse response = new MemberAuthResponse();
         response.setToken(token);
@@ -105,6 +132,7 @@ public class MemberAuthService {
         response.setPhone(member.getPhone());
         response.setExpiresIn(null); // Never expires
         response.setIsOperator(member.getIsOperator());
+        response.setRole(member.getRole());
         return response;
     }
 

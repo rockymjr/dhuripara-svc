@@ -15,6 +15,7 @@ public class MemberResponse {
     private String lastNameBn;
     private String phone;
     private Boolean isOperator;
+    private String role;
     private String pin;
     private LocalDate joiningDate;
     private Boolean isActive;

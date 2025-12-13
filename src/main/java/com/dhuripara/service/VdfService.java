@@ -788,6 +788,7 @@ public class VdfService {
             memberResponse.setLastNameBn(deposit.getMember().getLastNameBn());
             memberResponse.setPhone(deposit.getMember().getPhone());
             memberResponse.setIsOperator(deposit.getMember().getIsOperator());
+            memberResponse.setRole(deposit.getMember().getRole());
             memberResponse.setIsActive(deposit.getMember().getIsActive());
             response.setMember(memberResponse);
         }

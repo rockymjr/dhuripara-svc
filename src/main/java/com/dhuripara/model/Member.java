@@ -40,6 +40,9 @@ public class Member {
 
     @Column(name = "pin", length = 4)
     private String pin;
+    
+    @Column(name = "password_hash", length = 255)
+    private String password;
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
@@ -58,6 +61,8 @@ public class Member {
 
     @Column(name = "is_operator")
     private Boolean isOperator = false;
+    @Column(name = "role", length = 20)
+    private String role = "MEMBER";
 
     @Column(name = "joining_date", nullable = false)
     private LocalDate joiningDate;

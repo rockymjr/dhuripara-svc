@@ -12,4 +12,5 @@ public class MemberAuthResponse {
     private String phone;
     private Long expiresIn;
     private Boolean isOperator;
+    private String role;
 }

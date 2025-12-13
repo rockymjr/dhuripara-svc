@@ -166,6 +166,7 @@ public class PublicService {
         response.setJoiningDate(member.getJoiningDate());
         response.setIsActive(member.getIsActive());
         response.setIsOperator(member.getIsOperator());
+                response.setRole(member.getRole());
         return response;
     }
 }

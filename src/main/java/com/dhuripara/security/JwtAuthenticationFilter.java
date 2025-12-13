@@ -63,16 +63,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     // Extract member ID and check if operator
                     UUID memberId = UUID.fromString(username.replace("MEMBER_", ""));
                     Member member = memberRepository.findById(memberId).orElse(null);
-
-                    if (member != null && member.getIsOperator()) {
-                        authorities = Arrays.asList(
-                                new SimpleGrantedAuthority("ROLE_OPERATOR"),
-                                new SimpleGrantedAuthority("ROLE_MEMBER")
-                        );
+                    if (member != null) {
+                        String role = member.getRole();
+                        if (role != null && role.equalsIgnoreCase("ADMIN")) {
+                            authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
+                        } else if (role != null && role.equalsIgnoreCase("OPERATOR")) {
+                            authorities = Arrays.asList(new SimpleGrantedAuthority("ROLE_OPERATOR"), new SimpleGrantedAuthority("ROLE_MEMBER"));
+                        } else {
+                            authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_MEMBER"));
+                        }
                     } else {
-                        authorities = Collections.singletonList(
-                                new SimpleGrantedAuthority("ROLE_MEMBER")
-                        );
+                        authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_MEMBER"));
                     }
                 } else {
                     // Admin token

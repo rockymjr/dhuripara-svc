@@ -3,7 +3,6 @@ package com.dhuripara.controller;
 import com.dhuripara.dto.request.DocumentUploadRequest;
 import com.dhuripara.dto.response.DocumentCategoryResponse;
 import com.dhuripara.dto.response.MemberDocumentResponse;
-import com.dhuripara.repository.AdminUserRepository;
 import com.dhuripara.service.DocumentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,7 +23,6 @@ import java.util.UUID;
 public class AdminDocumentController {
 
     private final DocumentService documentService;
-    private final AdminUserRepository adminUserRepository;
 
     @GetMapping("/categories")
     public ResponseEntity<List<DocumentCategoryResponse>> getAllCategories() {
@@ -40,9 +38,14 @@ public class AdminDocumentController {
             Authentication authentication) {
         try {
             String username = authentication.getName();
-            UUID adminUserId = adminUserRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("Admin user not found"))
-                    .getId();
+            UUID adminUserId;
+            // Expect admin sessions to be MEMBER_<id> tokens (admins are now members with ADMIN role)
+            if (username != null && username.startsWith("MEMBER_")) {
+                adminUserId = UUID.fromString(username.replace("MEMBER_", ""));
+            } else {
+                // If not a member token, we cannot resolve admin user - reject
+                throw new RuntimeException("Invalid admin principal: unable to determine user id");
+            }
             
             DocumentUploadRequest request = new DocumentUploadRequest();
             request.setMemberId(memberId);

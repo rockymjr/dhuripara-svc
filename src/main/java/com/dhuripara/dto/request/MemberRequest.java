@@ -46,6 +46,7 @@ public class MemberRequest {
     private UUID familyId; // Link to VdfFamilyConfig
 
     private Boolean isOperator = false;
+    private String role = "MEMBER";
 
     public interface ValidationGroups {
         interface PhoneValidation {}

@@ -44,6 +44,10 @@ public class MemberService {
         member.setIsActive(true);
         member.setIsBlocked(false);
         member.setFailedLoginAttempts(0);
+        // set role, default to MEMBER
+        member.setRole(request.getRole() != null ? request.getRole() : "MEMBER");
+        // ensure isOperator boolean is consistent with role
+        member.setIsOperator("OPERATOR".equalsIgnoreCase(member.getRole()));
 
         Member savedMember = memberRepository.save(member);
         return convertToResponse(savedMember);
@@ -96,6 +100,11 @@ public class MemberService {
         member.setPanNo(request.getPanNo());
         member.setFamilyId(request.getFamilyId());
         member.setIsOperator(request.getIsOperator());
+        // if role is provided, override isOperator to match role
+        if (request.getRole() != null) {
+            member.setRole(request.getRole());
+            member.setIsOperator("OPERATOR".equalsIgnoreCase(request.getRole()));
+        }
 
         Member updatedMember = memberRepository.save(member);
         return convertToResponse(updatedMember);
@@ -149,6 +158,7 @@ public class MemberService {
         response.setJoiningDate(member.getJoiningDate());
         response.setIsActive(member.getIsActive());
         response.setIsOperator(member.getIsOperator());
+        response.setRole(member.getRole());
         response.setPin(member.getPin());
         response.setIsBlocked(member.isCurrentlyBlocked());
         response.setBlockedUntil(member.getBlockedUntil());
